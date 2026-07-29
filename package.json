@@ -3,5 +3,13 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ]
+  ],
+  "devDependencies": {
+    "concurrently": "^10.0.4"
+  },
+  "scripts": {
+    "dev": "concurrently \"bun run dev:server\" \"bun run dev:desktop\"",
+    "dev:server": "bun run --cwd apps/server dev",
+    "dev:desktop": "bun run --cwd apps/desktop tauri dev"
+  }
 }
