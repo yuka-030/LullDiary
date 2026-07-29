@@ -1,15 +1,24 @@
 {
   "name": "lulldiary",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*"
   ],
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "concurrently": "^10.0.4",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "6.0.2",
+    "typescript-eslint": "^8.65.0"
   },
   "scripts": {
     "dev": "concurrently \"bun run dev:server\" \"bun run dev:desktop\"",
     "dev:server": "bun run --cwd apps/server dev",
-    "dev:desktop": "bun run --cwd apps/desktop tauri dev"
+    "dev:desktop": "bun run --cwd apps/desktop tauri dev",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   }
 }
