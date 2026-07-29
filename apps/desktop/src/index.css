@@ -1,0 +1,35 @@
+/* apps/desktop/src/index.css */
+@import 'tailwindcss';
+
+@theme {
+  --font-disp: 'Fredoka', sans-serif;
+  --font-body: 'Quicksand', sans-serif;
+
+  --color-bg: #fbf2e7;
+  --color-bg2: #f6e6d8;
+  --color-main: #e8a24c;
+  --color-glow: #f6c880;
+  --color-sub: #b98ca6;
+  --color-txt: #4a3b31;
+  --color-txt2: #8c7768;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-txt);
+  font-family: var(--font-body);
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--color-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 20px transparent;
+  }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
