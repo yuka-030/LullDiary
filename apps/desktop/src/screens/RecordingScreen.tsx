@@ -1,24 +1,51 @@
 // apps/desktop/src/screens/RecordingScreen.tsx
 import { useState } from 'react'
+import { useRecorder } from '../lib/useRecorder'
 
 export default function RecordingScreen() {
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
+  const { status, start, stop, lastSavedPath, errorMessage } = useRecorder()
+
+  const isRecording = status === 'recording'
+  const isSaving = status === 'saving'
+
+  async function handleMicClick() {
+    if (isRecording) {
+      await stop()
+    } else {
+      await start()
+    }
+  }
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center gap-10 bg-bg px-6 py-12">
-      <p className="font-disp text-xl text-txt sm:text-2xl">今日は どんな１日だった？</p>
+      <p className="font-disp text-xl text-txt sm:text-2xl">今日は どんな一日だった?</p>
 
       {mode === 'voice' ? (
         <>
           <button
             type="button"
-            aria-label="録音を開始する"
-            className="relative flex h-44 w-44 items-center justify-center rounded-full bg-main text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-glow motion-reduce:animate-none animate-breathe"
+            aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
+            onClick={handleMicClick}
+            disabled={isSaving}
+            className={`relative flex h-44 w-44 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-glow motion-reduce:animate-none disabled:opacity-60 ${
+              isRecording ? 'bg-secondary animate-pulse' : 'bg-main animate-breathe'
+            }`}
           >
             <MicIcon className="h-16 w-16" />
           </button>
 
-          <p className="font-body text-sm text-txt2">タップして話しかけてね</p>
+          <p className="font-body text-sm text-txt2">
+            {isSaving
+              ? '保存しているよ…'
+              : isRecording
+                ? 'タップして録音を終える'
+                : 'タップして話しかけてね'}
+          </p>
+
+          {errorMessage && <p className="font-body text-sm text-secondary">{errorMessage}</p>}
+
+          {lastSavedPath && <p className="font-body text-xs text-txt2">保存先: {lastSavedPath}</p>}
         </>
       ) : (
         <textarea
