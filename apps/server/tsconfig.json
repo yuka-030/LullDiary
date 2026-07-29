@@ -6,9 +6,11 @@
     "moduleDetection": "force",
     "moduleResolution": "bundler",
     "types": ["bun"],
+    "rootDir": "./src",
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["./src"]
 }
