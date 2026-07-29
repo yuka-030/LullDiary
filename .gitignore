@@ -14,6 +14,9 @@ apps/desktop/src-tauri/gen/
 apps/desktop/dist/
 apps/desktop/.vite/
 
+apps/server/data/*.db
+apps/server/data/*.db-*
+
 .DS_Store
 Thumbs.db
 
