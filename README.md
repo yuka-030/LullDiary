@@ -110,7 +110,6 @@ lulldiary/
 ├── docs/
 │   ├── requirements.md
 │   ├── design-ui.md
-│   ├── design-api.md
 │   ├── design-ai.md
 │   └── design-db.md
 └── README.md
