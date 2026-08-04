@@ -13,12 +13,12 @@
 
 ## Features (MVP)
 
-- [x] 音声入力 / テキスト入力
-- [x] ローカルLLMによる物語生成(読み聞かせ調)
-- [x] 入力内容からのタグ抽出(対象者・シーン・感情・登場人物)
-- [x] 生成物語の音声読み上げ(TTS)
-- [x] 写真添付(任意・思い出を残したい日だけ)
-- [x] 日記の一覧・閲覧
+- [ ] 音声入力 / テキスト入力
+- [ ] ローカルLLMによる物語生成(読み聞かせ調)
+- [ ] 入力内容からのタグ抽出(対象者・シーン・感情・登場人物)
+- [ ] 生成物語の音声読み上げ(TTS)
+- [ ] 写真添付(任意・思い出を残したい日だけ)
+- [ ] 日記の一覧・閲覧
 
 ## Architecture
 
@@ -75,6 +75,7 @@ flowchart TB
 
 - [Bun](https://bun.sh/)
 - [Rust](https://www.rust-lang.org/) / [Tauri CLI](https://tauri.app/)
+- [CMake](https://cmake.org/)(whisper.cppのビルド用)
 - [Ollama](https://ollama.com/)(ローカルLLM実行)
 - [VOICEVOX](https://voicevox.hiroshiba.jp/)(ローカルTTSエンジン)
 - Cコンパイラ(gcc / clang 等、前処理ライブラリのビルド用)
@@ -84,7 +85,41 @@ flowchart TB
 ```bash
 # 依存パッケージのインストール
 bun install
+```
 
+#### whisper.cpp のセットアップ
+
+STTエンジンとして whisper.cpp を使用します。ソース・モデルファイルはリポジトリに含めていないため、初回のみ以下の手順でセットアップしてください。
+
+```bash
+# ソースの取得
+cd apps/server/vendor
+git clone https://github.com/ggerganov/whisper.cpp.git
+cd whisper.cpp
+
+# 日本語モデル(small)のダウンロード
+# Windows
+.\models\download-ggml-model.cmd small
+# macOS / Linux
+bash ./models/download-ggml-model.sh small
+
+# ビルド
+cmake -B build
+cmake --build build --config Release
+```
+
+動作確認:
+
+```bash
+# Windows
+.\build\bin\Release\whisper-cli.exe -m ggml-small.bin -f samples\jfk.wav -l ja
+# macOS / Linux
+./build/bin/whisper-cli -m ggml-small.bin -f samples/jfk.wav -l ja
+```
+
+#### その他のセットアップ
+
+```bash
 # Cライブラリのビルド(前処理用共有ライブラリ)
 cd native/audio-preprocess && make && cd ../..
 
@@ -96,22 +131,34 @@ ollama pull gemma2:2b
 
 # 開発サーバー起動
 bun run tauri dev
+
 ```
 
-## Project Structure (予定)
+## Project Structure
 
 ```
 lulldiary/
-├── src/                 # React/TSフロントエンド
-├── src-tauri/           # Tauri (Rust) バックエンド
-├── native/
-│   └── audio-preprocess/ # 自作Cライブラリ(音声前処理)
-├── server/               # Hono (Bun) ローカルAPIサーバー
+├── apps/
+│   ├── desktop/                    # Tauri アプリ (Rust + React/TS)
+│   │   ├── src/
+│   │   │   ├── lib/                # 音声録音・WAVエンコード等のロジック
+│   │   │   ├── screens/            # 画面コンポーネント
+│   │   │   ├── App.tsx
+│   │   │   ├── index.css           # Tailwind テーマ定義
+│   │   │   └── main.tsx
+│   │   └── src-tauri/              # Tauri (Rust) バックエンド
+│   └── server/                     # Hono (Bun) ローカルAPIサーバー
+│       ├── src/
+│       │   ├── db/                 # SQLite 接続モジュール
+│       │   └── index.ts
+│       ├── data/                   # SQLite DBファイル (git管理外)
+│       └── vendor/                 # whisper.cpp 等の外部ツール (git管理外)
 ├── docs/
 │   ├── requirements.md
 │   ├── design-ui.md
 │   ├── design-ai.md
 │   └── design-db.md
+├── .github/workflows/              # CI (Lint / Format / 型チェック)
 └── README.md
 ```
 

@@ -2,8 +2,10 @@ node_modules/
 bun.lockb
 .bun/
 dist/
+dist-ssr/
 build/
 *.tsbuildinfo
+*.local
 .env
 .env.*
 !.env.example
@@ -17,12 +19,19 @@ apps/desktop/.vite/
 apps/server/data/*.db
 apps/server/data/*.db-*
 
+apps/server/vendor/
+
 .DS_Store
 Thumbs.db
 
 .vscode/*
 !.vscode/extensions.json
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 *.log
 npm-debug.log*

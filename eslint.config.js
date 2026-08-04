@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/build/**',
       '**/src-tauri/target/**',
       '**/data/**',
+      '**/vendor/**',
     ],
   },
   ...tseslint.configs.recommended,
