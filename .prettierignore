@@ -3,4 +3,5 @@ dist
 build
 apps/desktop/src-tauri/target
 apps/server/data
+apps/server/vendor
 bun.lock
