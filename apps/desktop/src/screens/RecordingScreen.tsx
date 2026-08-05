@@ -30,11 +30,11 @@ export default function RecordingScreen() {
             {isRecording && (
               <>
                 <HeartShape
-                  className="animate-ripple text-glow absolute inset-0 h-full w-full"
+                  className="animate-ripple text-rec2 absolute inset-0 h-full w-full"
                   style={{ ['--ripple-scale' as string]: rippleScale }}
                 />
                 <HeartShape
-                  className="animate-ripple text-glow absolute inset-0 h-full w-full"
+                  className="animate-ripple text-rec2 absolute inset-0 h-full w-full"
                   style={{
                     ['--ripple-scale' as string]: rippleScale,
                     animationDelay: '2.5s',
@@ -54,8 +54,16 @@ export default function RecordingScreen() {
               disabled={isSaving}
               className="relative h-full w-full transition-transform hover:scale-105 disabled:opacity-60"
             >
-              <HeartShape className="text-main absolute inset-0 h-full w-full" />
-              <MicIcon className="absolute top-1/2 left-1/2 h-16 w-16 -translate-x-1/2 -translate-y-[55%] text-white" />
+              <HeartShape
+                className={`absolute inset-0 h-full w-full transition-colors ${
+                  isRecording ? 'text-rec' : 'text-main'
+                }`}
+              />
+              {isRecording ? (
+                <StopIcon className="absolute top-1/2 left-1/2 h-14 w-14 -translate-x-1/2 -translate-y-[55%] text-white" />
+              ) : (
+                <MicIcon className="absolute top-1/2 left-1/2 h-16 w-16 -translate-x-1/2 -translate-y-[55%] text-white" />
+              )}
             </button>
           </div>
 
@@ -115,6 +123,14 @@ function MicIcon({ className }: { className?: string }) {
         strokeWidth={1.8}
         strokeLinecap="round"
       />
+    </svg>
+  )
+}
+
+function StopIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="7" y="7" width="10" height="10" rx="2.5" fill="currentColor" />
     </svg>
   )
 }

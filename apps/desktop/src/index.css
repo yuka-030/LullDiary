@@ -9,6 +9,8 @@
   --color-bg2: #f6e6d8;
   --color-main: #e8a24c;
   --color-glow: #f6c880;
+  --color-rec: #e08a7d;
+  --color-rec2: #f2b8ac;
   --color-sub: #b98ca6;
   --color-txt: #4a3b31;
   --color-txt2: #8c7768;
@@ -20,7 +22,7 @@ body {
   font-family: var(--font-body);
 }
 
-/* 呼吸するようにゆっくり明滅する */
+/* 待機中: ハートの形に沿って光がゆっくり広がっては消える */
 @keyframes glow-pulse {
   0% {
     transform: scale(1);
@@ -36,7 +38,7 @@ body {
   animation: glow-pulse 5s ease-out infinite;
 }
 
-/* 水面の波紋のように、中心から外へ広がりながら薄れて消える */
+/* 録音中: 水面の波紋のように中心から外へ広がりながら薄れて消える */
 @keyframes ripple {
   0% {
     transform: scale(1);
@@ -53,7 +55,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-breathe,
+  .animate-glow-pulse,
   .animate-ripple {
     animation: none;
   }
