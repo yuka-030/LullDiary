@@ -4,10 +4,13 @@ import { useRecorder } from '../lib/useRecorder'
 
 export default function RecordingScreen() {
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
-  const { status, start, stop, lastSavedPath, errorMessage } = useRecorder()
+  const { status, start, stop, lastSavedPath, errorMessage, level } = useRecorder()
 
   const isRecording = status === 'recording'
   const isSaving = status === 'saving'
+
+  // 声が大きいほど波紋が遠くまで広がる
+  const rippleScale = 1.1 + level * 0.35
 
   async function handleMicClick() {
     if (isRecording) {
@@ -19,37 +22,58 @@ export default function RecordingScreen() {
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center gap-10 bg-bg px-6 py-12">
-      <p className="font-disp text-xl text-txt sm:text-2xl">今日は どんな一日だった?</p>
+      <p className="font-disp text-txt text-xl sm:text-2xl">今日は どんな一日だった?</p>
 
       {mode === 'voice' ? (
         <>
-          <button
-            type="button"
-            aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
-            onClick={handleMicClick}
-            disabled={isSaving}
-            className={`relative flex h-44 w-44 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-glow motion-reduce:animate-none disabled:opacity-60 ${
-              isRecording ? 'bg-secondary animate-pulse' : 'bg-main animate-breathe'
-            }`}
-          >
-            <MicIcon className="h-16 w-16" />
-          </button>
+          <div className="relative flex h-56 w-56 items-center justify-center">
+            {isRecording && (
+              <>
+                <HeartShape
+                  className="animate-ripple text-glow absolute inset-0 h-full w-full"
+                  style={{ ['--ripple-scale' as string]: rippleScale }}
+                />
+                <HeartShape
+                  className="animate-ripple text-glow absolute inset-0 h-full w-full"
+                  style={{
+                    ['--ripple-scale' as string]: rippleScale,
+                    animationDelay: '2.5s',
+                  }}
+                />
+              </>
+            )}
 
-          <p className="font-body text-sm text-txt2">
+            {!isRecording && (
+              <HeartShape className="animate-glow-pulse text-glow absolute inset-0 h-full w-full" />
+            )}
+
+            <button
+              type="button"
+              aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
+              onClick={handleMicClick}
+              disabled={isSaving}
+              className="relative h-full w-full transition-transform hover:scale-105 disabled:opacity-60"
+            >
+              <HeartShape className="text-main absolute inset-0 h-full w-full" />
+              <MicIcon className="absolute top-1/2 left-1/2 h-16 w-16 -translate-x-1/2 -translate-y-[55%] text-white" />
+            </button>
+          </div>
+
+          <p className="font-body text-txt2 text-sm">
             {isSaving
               ? '保存しているよ…'
               : isRecording
-                ? 'タップして録音を終える'
+                ? 'タップで録音終わるよ'
                 : 'タップして話しかけてね'}
           </p>
 
-          {errorMessage && <p className="font-body text-sm text-secondary">{errorMessage}</p>}
+          {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
 
-          {lastSavedPath && <p className="font-body text-xs text-txt2">保存先: {lastSavedPath}</p>}
+          {lastSavedPath && <p className="font-body text-txt2 text-xs">保存先: {lastSavedPath}</p>}
         </>
       ) : (
         <textarea
-          className="font-body h-44 w-full max-w-md rounded-3xl border-2 border-bg2 bg-white/60 p-5 text-txt placeholder:text-txt2 focus:border-main focus:outline-none"
+          className="font-body border-bg2 text-txt placeholder:text-txt2 focus:border-main h-44 w-full max-w-md rounded-3xl border-2 bg-white/60 p-5 focus:outline-none"
           placeholder="今日あったことを書いてみてね"
         />
       )}
@@ -57,12 +81,23 @@ export default function RecordingScreen() {
       <button
         type="button"
         onClick={() => setMode(mode === 'voice' ? 'text' : 'voice')}
-        className="font-body flex items-center gap-2 rounded-full border-2 border-sub px-6 py-2 text-sub transition-colors hover:bg-sub hover:text-white"
+        className="font-body border-sub text-sub hover:bg-sub flex items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
       >
         {mode === 'voice' ? <PencilIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />}
         {mode === 'voice' ? '文字で書く' : '声で話す'}
       </button>
     </main>
+  )
+}
+
+function HeartShape({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 100 92" className={className} style={style} aria-hidden="true">
+      <path
+        d="M46 88C38 82 20 68 10 55C3 45 0 38 0 28C0 12 12 2 26 2C40 2 48 12 50 19C52 12 60 2 74 2C88 2 100 12 100 28C100 38 97 45 90 55C80 68 62 82 54 88C51 90 49 90 46 88Z"
+        fill="currentColor"
+      />
+    </svg>
   )
 }
 
