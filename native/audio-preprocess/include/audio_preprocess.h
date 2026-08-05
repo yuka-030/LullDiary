@@ -36,4 +36,21 @@ int trim_silence(const float *samples, size_t sample_count, float threshold,
  */
  int detect_voice_activity(const float *samples, size_t sample_count, size_t frame_size, float threshold, size_t *out_start, size_t *out_length);
 
+ /*
+ * 録音環境による音量差を均すため、RMSを基準に音量を正規化する。
+ *
+ * 全体のRMSが target_rms になるよう倍率を求め、各サンプルに掛ける。
+ * 極端に小さい音声を無理に増幅するとノイズだけが大きくなるため、
+ * 倍率には max_gain で上限を設ける。それでも 1.0 を超える値は
+ * 音割れになるため、±1.0 の範囲に収める。
+ *
+ * samples      入出力サンプル列(-1.0〜1.0に正規化されたモノラルPCM)
+ * sample_count サンプル数
+ * target_rms   目標とするRMS(例: 0.1)
+ * max_gain     倍率の上限(例: 10.0)
+ *
+ * 戻り値: 正規化を行えば 1、無音などで行わなければ 0
+ */
+ int normalize_volume(float *samples, size_t sample_count, float target_rms, float max_gain);
+
 #endif
