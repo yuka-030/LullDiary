@@ -22,7 +22,7 @@ export default function RecordingScreen() {
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center gap-10 bg-bg px-6 py-12">
-      <p className="font-disp text-txt text-xl sm:text-2xl">今日は どんな一日だった?</p>
+      <p className="font-disp text-txt text-xl sm:text-2xl">今日は どんな１日だった？</p>
 
       {mode === 'voice' ? (
         <>
