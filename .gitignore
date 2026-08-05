@@ -21,6 +21,12 @@ apps/server/data/*.db-*
 
 apps/server/vendor/
 
+native/**/*.exe
+native/**/*.o
+native/**/*.dll
+native/**/*.so
+native/**/*.dylib
+
 .DS_Store
 Thumbs.db
 
