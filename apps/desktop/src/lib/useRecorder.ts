@@ -10,6 +10,7 @@ export function useRecorder() {
   const [status, setStatus] = useState<RecorderStatus>('idle')
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [level, setLevel] = useState(0)
 
   const audioContextRef = useRef<AudioContext | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -21,7 +22,7 @@ export function useRecorder() {
     setErrorMessage(null)
 
     try {
-      // 1. マイクアクセス許可のリクエスト
+      // マイクアクセス許可のリクエスト
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       })
@@ -41,6 +42,11 @@ export function useRecorder() {
       processor.onaudioprocess = (event) => {
         const input = event.inputBuffer.getChannelData(0)
         chunksRef.current.push(new Float32Array(input))
+
+        // 波紋アニメーション用に、音量(RMS)を算出して0～1に正規化する
+        const sumOfSquares = input.reduce((sum, sample) => sum + sample * sample, 0)
+        const rms = Math.sqrt(sumOfSquares / input.length)
+        setLevel(Math.min(1, rms * 6))
       }
 
       source.connect(processor)
@@ -105,5 +111,5 @@ export function useRecorder() {
     }
   }, [])
 
-  return { status, start, stop, lastSavedPath, errorMessage }
+  return { status, start, stop, lastSavedPath, errorMessage, level }
 }
