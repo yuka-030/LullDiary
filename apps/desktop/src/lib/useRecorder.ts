@@ -1,10 +1,12 @@
 // apps/desktop/src/lib/useRecorder.ts
+import { invoke } from '@tauri-apps/api/core'
 import { appDataDir, join } from '@tauri-apps/api/path'
 import { exists, mkdir, writeFile } from '@tauri-apps/plugin-fs'
 import { useCallback, useRef, useState } from 'react'
+import { requestTranscription } from './sttClient'
 import { encodeWav } from './wavEncoder'
 
-export type RecorderStatus = 'idle' | 'recording' | 'saving' | 'error'
+export type RecorderStatus = 'idle' | 'recording' | 'processing' | 'error'
 
 /**
  * whisper.cpp は 16kHz モノラルの音声を前提としている。
@@ -14,7 +16,7 @@ const TARGET_SAMPLE_RATE = 16000
 
 export function useRecorder() {
   const [status, setStatus] = useState<RecorderStatus>('idle')
-  const [lastSavedPath, setLastSavedPath] = useState<string | null>(null)
+  const [transcript, setTranscript] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [level, setLevel] = useState(0)
 
@@ -26,6 +28,7 @@ export function useRecorder() {
 
   const start = useCallback(async () => {
     setErrorMessage(null)
+    setTranscript(null)
 
     try {
       // マイクアクセス許可のリクエスト
@@ -82,7 +85,7 @@ export function useRecorder() {
       return
     }
 
-    setStatus('saving')
+    setStatus('processing')
     setLevel(0)
 
     processor.disconnect()
@@ -103,8 +106,17 @@ export function useRecorder() {
     await audioContext.close()
 
     try {
-      const wavBuffer = encodeWav(merged, sampleRate)
+      /**
+       * 自作Cライブラリで前処理する。
+       * 音量を揃えたうえで発話の有無を確認し、前後の無音を除いたサンプル列が返る。
+       */
+      const processed = await invoke<number[]>('preprocess_audio', {
+        samples: Array.from(merged),
+      })
 
+      const wavBuffer = encodeWav(new Float32Array(processed), sampleRate)
+
+      // 前処理済みの音声を、後から聞き返せるよう保存する
       const dataDir = await appDataDir()
       const audioDir = await join(dataDir, 'audio')
 
@@ -112,18 +124,18 @@ export function useRecorder() {
         await mkdir(audioDir, { recursive: true })
       }
 
-      const fileName = `${Date.now()}.wav`
-      const filePath = await join(audioDir, fileName)
-
+      const filePath = await join(audioDir, `${Date.now()}.wav`)
       await writeFile(filePath, new Uint8Array(wavBuffer))
 
-      setLastSavedPath(filePath)
+      const text = await requestTranscription(wavBuffer)
+
+      setTranscript(text)
       setStatus('idle')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : '録音データの保存に失敗しました')
+      setErrorMessage(err instanceof Error ? err.message : String(err))
       setStatus('error')
     }
   }, [])
 
-  return { status, start, stop, lastSavedPath, errorMessage, level }
+  return { status, start, stop, transcript, errorMessage, level }
 }

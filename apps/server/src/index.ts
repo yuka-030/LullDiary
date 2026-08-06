@@ -1,8 +1,21 @@
 // apps/server/src/index.ts
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { transcribe, WhisperError } from './stt/whisper'
 
 const app = new Hono()
+
+/**
+ * Tauriアプリ(localhost:1420)から別オリジンの本サーバーへ
+ * リクエストするため、CORSを許可する。
+ * ローカル完結の構成のため、開発用オリジンのみを対象にしている。
+ */
+app.use(
+  '/*',
+  cors({
+    origin: ['http://localhost:1420', 'tauri://localhost'],
+  })
+)
 
 app.get('/health', (c) => {
   return c.json({ status: 'ok' }, 200)

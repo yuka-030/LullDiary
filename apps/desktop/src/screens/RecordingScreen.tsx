@@ -4,10 +4,10 @@ import { useRecorder } from '../lib/useRecorder'
 
 export default function RecordingScreen() {
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
-  const { status, start, stop, lastSavedPath, errorMessage, level } = useRecorder()
+  const { status, start, stop, transcript, errorMessage, level } = useRecorder()
 
   const isRecording = status === 'recording'
-  const isSaving = status === 'saving'
+  const isProcessing = status === 'processing'
 
   // 声が大きいほど波紋が遠くまで広がる
   const rippleScale = 1.1 + level * 0.35
@@ -51,7 +51,7 @@ export default function RecordingScreen() {
               type="button"
               aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
               onClick={handleMicClick}
-              disabled={isSaving}
+              disabled={isProcessing}
               className="relative h-full w-full transition-transform hover:scale-105 disabled:opacity-60"
             >
               <HeartShape
@@ -68,8 +68,8 @@ export default function RecordingScreen() {
           </div>
 
           <p className="font-body text-txt2 text-sm">
-            {isSaving
-              ? '保存しているよ…'
+            {isProcessing
+              ? 'いま聞いているよ…'
               : isRecording
                 ? 'タップで録音終わるよ'
                 : 'タップして話しかけてね'}
@@ -77,7 +77,7 @@ export default function RecordingScreen() {
 
           {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
 
-          {lastSavedPath && <p className="font-body text-txt2 text-xs">保存先: {lastSavedPath}</p>}
+          {transcript && <p className="font-body text-txt w-full max-w-md text-sm">{transcript}</p>}
         </>
       ) : (
         <textarea
