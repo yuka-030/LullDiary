@@ -6,6 +6,12 @@ import { encodeWav } from './wavEncoder'
 
 export type RecorderStatus = 'idle' | 'recording' | 'saving' | 'error'
 
+/**
+ * whisper.cpp は 16kHz モノラルの音声を前提としている。
+ * 後段でリサンプリングすると変換ロスが生じるため、録音時点でこのレートに揃える。
+ */
+const TARGET_SAMPLE_RATE = 16000
+
 export function useRecorder() {
   const [status, setStatus] = useState<RecorderStatus>('idle')
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null)
@@ -24,11 +30,18 @@ export function useRecorder() {
     try {
       // マイクアクセス許可のリクエスト
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
+        audio: {
+          channelCount: 1,
+          sampleRate: TARGET_SAMPLE_RATE,
+        },
       })
       streamRef.current = stream
 
-      const audioContext = new AudioContext()
+      /**
+       * AudioContext にもレートを指定する。
+       * マイクが 16kHz に対応していない場合でも、ブラウザ側で変換される。
+       */
+      const audioContext = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE })
       audioContextRef.current = audioContext
 
       const source = audioContext.createMediaStreamSource(stream)
@@ -70,6 +83,7 @@ export function useRecorder() {
     }
 
     setStatus('saving')
+    setLevel(0)
 
     processor.disconnect()
     source.disconnect()
