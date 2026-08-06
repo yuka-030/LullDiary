@@ -78,7 +78,18 @@ flowchart TB
 - [CMake](https://cmake.org/)(whisper.cppのビルド用)
 - [Ollama](https://ollama.com/)(ローカルLLM実行)
 - [VOICEVOX](https://voicevox.hiroshiba.jp/)(ローカルTTSエンジン)
-- Cコンパイラ(gcc / clang 等、前処理ライブラリのビルド用)
+- Cコンパイラ・make(前処理ライブラリのビルド用)
+  - macOS / Linux: gcc または clang、make
+  - Windows: [MSYS2](https://www.msys2.org/) 経由で導入
+
+Windows で MSYS2 から導入する場合:
+
+```powershell
+winget install -e --id MSYS2.MSYS2
+C:\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make"
+```
+
+導入後、`C:\msys64\ucrt64\bin` を PATH に追加してください。
 
 ### Setup
 
@@ -121,7 +132,11 @@ cmake --build build --config Release
 
 ```bash
 # Cライブラリのビルド(前処理用共有ライブラリ)
-cd native/audio-preprocess && make && cd ../..
+# Windows では make ではなく mingw32-make を使用します
+cd native/audio-preprocess
+make            # Windows: mingw32-make
+make test       # テスト実行(Windows: mingw32-make test)
+cd ../..
 
 # Ollamaでモデルを取得
 ollama pull gemma2:2b
@@ -130,7 +145,7 @@ ollama pull gemma2:2b
 # https://voicevox.hiroshiba.jp/ からダウンロードして起動
 
 # 開発サーバー起動
-bun run tauri dev
+bun run dev
 
 ```
 
@@ -158,6 +173,13 @@ lulldiary/
 │   ├── design-ui.md
 │   ├── design-ai.md
 │   └── design-db.md
+├── native/
+│   └── audio-preprocess/           # 音声前処理の自作Cライブラリ
+│       ├── include/                # 公開する関数の宣言
+│       ├── src/                    # 実装とテスト
+│       ├── build/                  # 中間ファイル (git管理外)
+│       ├── dist/                   # 共有ライブラリ (git管理外)
+│       └── Makefile
 ├── .github/workflows/              # CI (Lint / Format / 型チェック)
 └── README.md
 ```
