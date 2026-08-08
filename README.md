@@ -128,26 +128,44 @@ cmake --build build --config Release
 ./build/bin/whisper-cli -m ggml-small.bin -f samples/jfk.wav -l ja
 ```
 
-#### その他のセットアップ
+#### Cライブラリのビルド
+
+音声前処理用の共有ライブラリをビルドします。
 
 ```bash
-# Cライブラリのビルド(前処理用共有ライブラリ)
-# Windows では make ではなく mingw32-make を使用します
 cd native/audio-preprocess
 make            # Windows: mingw32-make
 make test       # テスト実行(Windows: mingw32-make test)
 cd ../..
-
-# Ollamaでモデルを取得
-ollama pull gemma2:2b
-
-# VOICEVOXエンジンを起動(別プロセス)
-# https://voicevox.hiroshiba.jp/ からダウンロードして起動
-
-# 開発サーバー起動
-bun run dev
-
 ```
+
+#### Ollama のセットアップ
+
+物語生成・タグ抽出に使用するローカルLLMです。[Ollama](https://ollama.com/) をインストールした後、モデルを取得してください。
+
+```bash
+ollama pull gemma2:2b
+```
+
+動作確認:
+
+```bash
+ollama run gemma2:2b "こんにちは。あなたは誰ですか?"
+```
+
+日本語で応答が返れば正常です。初回はモデルの読み込みに時間がかかります。
+
+#### VOICEVOX のセットアップ
+
+読み上げに使用するTTSエンジンです。[VOICEVOX](https://voicevox.hiroshiba.jp/) からダウンロードし、別プロセスとして起動しておいてください。
+
+#### 開発サーバーの起動
+
+```bash
+bun run dev
+```
+
+Honoサーバー(localhost:3000)とTauriアプリが同時に起動します。
 
 ## Project Structure
 
@@ -156,6 +174,7 @@ lulldiary/
 ├── apps/
 │   ├── desktop/                    # Tauri アプリ (Rust + React/TS)
 │   │   ├── src/
+│   │   │   ├── components/         # 共通コンポーネント
 │   │   │   ├── lib/                # 音声録音・WAVエンコード等のロジック
 │   │   │   ├── screens/            # 画面コンポーネント
 │   │   │   ├── App.tsx
@@ -165,6 +184,7 @@ lulldiary/
 │   └── server/                     # Hono (Bun) ローカルAPIサーバー
 │       ├── src/
 │       │   ├── db/                 # SQLite 接続モジュール
+│       │   ├── stt/                # whisper.cpp 呼び出し
 │       │   └── index.ts
 │       ├── data/                   # SQLite DBファイル (git管理外)
 │       └── vendor/                 # whisper.cpp 等の外部ツール (git管理外)
