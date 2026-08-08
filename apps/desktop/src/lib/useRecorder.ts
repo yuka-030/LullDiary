@@ -137,5 +137,10 @@ export function useRecorder() {
     }
   }, [])
 
-  return { status, start, stop, transcript, errorMessage, level }
+  /** モーダルを閉じる際に認識結果を破棄する */
+  const clearTranscript = useCallback(() => {
+    setTranscript(null)
+  }, [])
+
+  return { status, start, stop, transcript, clearTranscript, errorMessage, level }
 }
