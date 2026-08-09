@@ -59,7 +59,7 @@ flowchart TB
 | バリデーション | Zod                             | LLM出力(JSON)のスキーマ検証で堅牢性を担保                                                                                                                   |
 | 音声前処理     | 自作Cライブラリ                 | 無音トリミング・簡易VAD・音量正規化を実装。バッファ操作やメモリ効率が求められる領域で、Cを選ぶ妥当性が説明しやすい。RustからFFI(`extern "C"`)経由で呼び出す |
 | STT            | whisper.cpp                     | ローカルCPUでも実用的な速度・精度の日本語音声認識                                                                                                           |
-| LLM            | Ollama (Gemma2 2B 等)           | ローカル完結。将来のスマホ単体動作を見据え、軽量モデルを優先検証                                                                                            |
+| LLM            | Ollama (Llama-3-ELYZA-JP-8B)    | ローカル完結。日本語特化チューニングにより、読み聞かせ調の自然な文章を生成できる                                                                            |
 | TTS            | VOICEVOX                        | 無料・ローカルで動作する、感情豊かな日本語音声合成                                                                                                          |
 | DB             | SQLite (`bun:sqlite`)           | 追加依存なしでBunから直接利用可能                                                                                                                           |
 
@@ -141,23 +141,40 @@ cd ../..
 
 #### Ollama のセットアップ
 
-物語生成・タグ抽出に使用するローカルLLMです。[Ollama](https://ollama.com/) をインストールした後、モデルを取得してください。
+物語生成に使用するローカルLLMです。[Ollama](https://ollama.com/) をインストールした後、ベースモデルを取得してください。
 
 ```bash
-ollama pull gemma2:2b
+ollama pull dsasai/llama3-elyza-jp-8b
+```
+
+続いて、語り手の設定と生成パラメータを組み込んだカスタムモデルを作成します。設定は `apps/server/ollama/Modelfile` で管理しています。
+
+```bash
+cd apps/server
+ollama create lulldiary-story -f ollama/Modelfile
+cd ../..
 ```
 
 動作確認:
 
 ```bash
-ollama run gemma2:2b "こんにちは。あなたは誰ですか?"
+ollama run lulldiary-story "今日は開発をした。新しい技術ばかりで環境構築が難しかった。"
 ```
 
-日本語で応答が返れば正常です。初回はモデルの読み込みに時間がかかります。
+読み聞かせのような語り口で応答が返れば正常です。初回はモデルの読み込みに時間がかかります。
 
 #### VOICEVOX のセットアップ
 
 読み上げに使用するTTSエンジンです。[VOICEVOX](https://voicevox.hiroshiba.jp/) からダウンロードし、別プロセスとして起動しておいてください。
+
+#### 環境変数の設定
+
+`apps/desktop` と `apps/server` に、それぞれ `.env.example` をコピーして `.env` を作成してください。
+
+```bash
+cp apps/desktop/.env.example apps/desktop/.env
+cp apps/server/.env.example apps/server/.env
+```
 
 #### 開発サーバーの起動
 
@@ -185,7 +202,9 @@ lulldiary/
 │       ├── src/
 │       │   ├── db/                 # SQLite 接続モジュール
 │       │   ├── stt/                # whisper.cpp 呼び出し
+│       │   ├── story/              # Ollama 呼び出し・プロンプト
 │       │   └── index.ts
+│       ├── ollama/                 # Modelfile (語り手の設定)
 │       ├── data/                   # SQLite DBファイル (git管理外)
 │       └── vendor/                 # whisper.cpp 等の外部ツール (git管理外)
 ├── docs/
