@@ -8,15 +8,27 @@ import { encodeWav } from './wavEncoder'
 
 export type RecorderStatus = 'idle' | 'recording' | 'processing' | 'error'
 
+/** 話し方の特徴。タグ抽出の手がかりとして使う */
+export type VoiceProfile = {
+  /** 発話中の平均音量(0〜1) */
+  averageLevel: number
+  /** 音量の変動の大きさ。抑揚があるほど大きくなる */
+  levelVariation: number
+}
+
 /**
  * whisper.cpp は 16kHz モノラルの音声を前提としている。
  * 後段でリサンプリングすると変換ロスが生じるため、録音時点でこのレートに揃える。
  */
 const TARGET_SAMPLE_RATE = 16000
 
+/** 無音とみなす音量。統計から除くために使う */
+const SILENCE_LEVEL = 0.01
+
 export function useRecorder() {
   const [status, setStatus] = useState<RecorderStatus>('idle')
   const [transcript, setTranscript] = useState<string | null>(null)
+  const [voiceProfile, setVoiceProfile] = useState<VoiceProfile | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [level, setLevel] = useState(0)
 
@@ -25,10 +37,12 @@ export function useRecorder() {
   const processorRef = useRef<ScriptProcessorNode | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
   const chunksRef = useRef<Float32Array[]>([])
+  const levelsRef = useRef<number[]>([])
 
   const start = useCallback(async () => {
     setErrorMessage(null)
     setTranscript(null)
+    setVoiceProfile(null)
 
     try {
       // マイクアクセス許可のリクエスト
@@ -54,14 +68,16 @@ export function useRecorder() {
       const processor = audioContext.createScriptProcessor(4096, 1, 1)
       processorRef.current = processor
       chunksRef.current = []
+      levelsRef.current = []
 
       processor.onaudioprocess = (event) => {
         const input = event.inputBuffer.getChannelData(0)
         chunksRef.current.push(new Float32Array(input))
 
-        // 波紋アニメーション用に、音量(RMS)を算出して0～1に正規化する
+        // 音量(RMS)を算出する。波紋アニメーションと話し方の分析に使う
         const sumOfSquares = input.reduce((sum, sample) => sum + sample * sample, 0)
         const rms = Math.sqrt(sumOfSquares / input.length)
+        levelsRef.current.push(rms)
         setLevel(Math.min(1, rms * 6))
       }
 
@@ -129,6 +145,7 @@ export function useRecorder() {
 
       const text = await requestTranscription(wavBuffer)
 
+      setVoiceProfile(summarizeLevels(levelsRef.current))
       setTranscript(text)
       setStatus('idle')
     } catch (err) {
@@ -142,5 +159,36 @@ export function useRecorder() {
     setTranscript(null)
   }, [])
 
-  return { status, start, stop, transcript, clearTranscript, errorMessage, level }
+  return {
+    status,
+    start,
+    stop,
+    transcript,
+    voiceProfile,
+    clearTranscript,
+    errorMessage,
+    level,
+  }
+}
+
+/**
+ * 録音中に蓄積した音量から、話し方の特徴を求める。
+ * 無音部分は話し方を表さないため、統計から除いている。
+ */
+function summarizeLevels(levels: number[]): VoiceProfile | null {
+  const voiced = levels.filter((value) => value > SILENCE_LEVEL)
+
+  if (voiced.length === 0) {
+    return null
+  }
+
+  const averageLevel = voiced.reduce((sum, value) => sum + value, 0) / voiced.length
+
+  const variance =
+    voiced.reduce((sum, value) => sum + (value - averageLevel) ** 2, 0) / voiced.length
+
+  return {
+    averageLevel,
+    levelVariation: Math.sqrt(variance),
+  }
 }
