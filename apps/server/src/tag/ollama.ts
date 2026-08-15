@@ -2,20 +2,6 @@
 import { z } from 'zod'
 import { adjustEmotions, type VoiceProfile } from './voice'
 
-// OllamaのローカルAPI
-const OLLAMA_URL = process.env.OLLAMA_URL
-
-// タグ抽出に使用するモデル
-const MODEL = process.env.OLLAMA_TAG_MODEL
-
-if (!OLLAMA_URL) {
-  throw new Error('OLLAMA_URL が設定されていません')
-}
-
-if (!MODEL) {
-  throw new Error('OLLAMA_TAG_MODEL が設定されていません')
-}
-
 // タグの選択肢
 export const TAG_OPTIONS = {
   シーン: ['家', '職場', '学校', 'お店', '移動中', '自然', '病院', 'その他'],
@@ -133,11 +119,22 @@ export function parseTags(raw: string): Tags {
 
 // Ollamaにタグ抽出を依頼し、生の出力を受け取る
 async function requestTagsFromOllama(input: string): Promise<string> {
-  const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+  const url = process.env.OLLAMA_URL
+  const model = process.env.OLLAMA_TAG_MODEL
+
+  if (!url) {
+    throw new TagExtractionError('OLLAMA_URL が設定されていません')
+  }
+
+  if (!model) {
+    throw new TagExtractionError('OLLAMA_TAG_MODEL が設定されていません')
+  }
+
+  const response = await fetch(`${url}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       prompt: buildPrompt(input),
       stream: false,
       format: 'json',
