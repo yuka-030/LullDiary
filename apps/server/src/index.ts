@@ -8,21 +8,18 @@ import type { VoiceProfile } from './tag/voice'
 
 const app = new Hono()
 
-/** /generate-story のリクエストボディ */
+// /generate-story のリクエストボディ
 type GenerateStoryRequest = {
   text?: unknown
 }
 
-/** /extract-tags のリクエストボディ */
+// /extract-tags のリクエストボディ
 type ExtractTagsRequest = {
   text?: unknown
   voice?: unknown
 }
 
-/**
- * Tauriアプリ(localhost:1420)から別オリジンの本サーバーへ
- * リクエストするため、CORSを許可する。
- */
+// Tauriアプリから別オリジンの本サーバーへリクエストするため、CORSを許可する
 app.use(
   '/*',
   cors({
@@ -30,7 +27,7 @@ app.use(
   })
 )
 
-/** リクエストで渡された話し方の特徴を、扱える形に整える */
+// リクエストで渡された話し方の特徴を、扱える形に整える
 function toVoiceProfile(value: unknown): VoiceProfile | undefined {
   if (typeof value !== 'object' || value === null) {
     return undefined
@@ -93,7 +90,7 @@ app.post('/extract-tags', async (c) => {
   }
 
   try {
-    const tags = await extractTags(body.text, toVoiceProfile(body.voice))
+    const tags = await extractTags(body.text, { profile: toVoiceProfile(body.voice) })
     return c.json({ tags }, 200)
   } catch (err) {
     if (err instanceof TagExtractionError) {
