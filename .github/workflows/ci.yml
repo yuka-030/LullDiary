@@ -63,3 +63,46 @@ jobs:
       - name: Type check (apps/desktop)
         working-directory: apps/desktop
         run: bunx tsc --noEmit
+
+  test-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run tests (apps/server)
+        working-directory: apps/server
+        run: bun test
+
+  test-c:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tests (native/audio-preprocess)
+        working-directory: native/audio-preprocess
+        run: make test
+
+  test-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Run tests (apps/desktop/src-tauri)
+        working-directory: apps/desktop/src-tauri
+        run: cargo test

@@ -1,20 +1,6 @@
 // apps/server/src/story/ollama.ts
 
-/** OllamaのローカルAPI */
-const OLLAMA_URL = process.env.OLLAMA_URL
-
-/** 物語生成に使用するモデル。語り手の設定とパラメータは Modelfile 側で定義している */
-const MODEL = process.env.OLLAMA_MODEL
-
-if (!OLLAMA_URL) {
-  throw new Error('OLLAMA_URL が設定されていません')
-}
-
-if (!MODEL) {
-  throw new Error('OLLAMA_MODEL が設定されていません')
-}
-
-/** Ollamaの生成APIが返すレスポンス */
+// Ollamaの生成APIが返すレスポンス
 type OllamaGenerateResponse = {
   response?: unknown
 }
@@ -26,10 +12,7 @@ export class OllamaError extends Error {
   }
 }
 
-/**
- * 物語生成のプロンプト。
- * 結末の型に引きずられないよう、締め方の異なる例を二つ示す。
- */
+// 物語生成のプロンプト
 function buildPrompt(input: string): string {
   return `次の文章を、読み聞かせのような語り口に書き直してください。
 
@@ -63,15 +46,24 @@ ${input}
 `
 }
 
-/**
- * 入力テキストから物語文を生成する。
- */
+// 入力テキストから物語文を生成する
 export async function generateStory(input: string): Promise<string> {
-  const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+  const url = process.env.OLLAMA_URL
+  const model = process.env.OLLAMA_MODEL
+
+  if (!url) {
+    throw new OllamaError('OLLAMA_URL が設定されていません')
+  }
+
+  if (!model) {
+    throw new OllamaError('OLLAMA_MODEL が設定されていません')
+  }
+
+  const response = await fetch(`${url}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       prompt: buildPrompt(input),
       stream: false,
     }),

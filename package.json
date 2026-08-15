@@ -19,6 +19,7 @@
     "dev:desktop": "bun run --cwd apps/desktop tauri dev",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:server": "bun test --cwd apps/server"
   }
 }
