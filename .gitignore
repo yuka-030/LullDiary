@@ -18,7 +18,9 @@ apps/desktop/.vite/
 
 apps/server/data/*.db
 apps/server/data/*.db-*
-
+apps/server/*.wav
+*.wav
+query*.json
 apps/server/vendor/
 
 native/**/*.exe

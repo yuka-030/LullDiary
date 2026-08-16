@@ -44,7 +44,7 @@ for (const { input, profile, label } of cases) {
   console.log('条件:', label)
 
   try {
-    const tags = await extractTags(input, profile)
+    const tags = await extractTags(input, { profile })
     console.log('タグ:', JSON.stringify(tags, null, 2))
   } catch (err) {
     console.log('エラー:', err instanceof Error ? err.message : String(err))
