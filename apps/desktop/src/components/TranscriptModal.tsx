@@ -1,27 +1,28 @@
 // apps/desktop/src/components/TranscriptModal.tsx
 import { useEffect, useRef, useState } from 'react'
 
-/** タイピング演出で1文字を表示する間隔(ミリ秒) */
-const TYPING_INTERVAL_MS = 45
+// 1文字を表示する間隔(ミリ秒)
+const TYPING_INTERVAL_MS = 90
 
 type Props = {
-  /** STTが返した認識結果 */
+  // STTが返した認識結果
   text: string
-  /** 編集内容を確定して次に進む */
+  // 編集内容を確定して次に進む
   onConfirm: (text: string) => void
-  /** 確定せずに閉じる */
+  // 確定せずに閉じる
   onCancel: () => void
 }
 
-/**
- * 認識結果を確認・修正するためのモーダル。
- * 開発中の精度確認用のため、実用化時には削除する想定。
- */
+// 認識結果を確認・修正するモーダル
+// 開発中の精度確認用で、実用化時には削除する想定
 export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
+  // 表示済みの文字数
   const [displayedLength, setDisplayedLength] = useState(0)
+  // 編集中のテキスト
   const [editedText, setEditedText] = useState(text)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // 演出がまだ終わっていないかどうか
   const isTyping = displayedLength < text.length
 
   // 一文字ずつ表示する
@@ -44,11 +45,12 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
     }
   }, [isTyping])
 
-  /** 演出を待たずに全文を表示する */
+  // 表示中の文字数を全体まで進める
   function skipTyping() {
     setDisplayedLength(text.length)
   }
 
+  // EnterキーまたはSpaceキーで演出をスキップする
   function handleSkipKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -56,7 +58,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
     }
   }
 
-  /** 紙の罫線。行の高さと間隔を揃えている */
+  // 紙の罫線
   const paperStyle = {
     backgroundImage:
       'repeating-linear-gradient(to bottom, transparent, transparent 31px, rgba(140, 119, 104, 0.18) 31px, rgba(140, 119, 104, 0.18) 32px)',
@@ -70,12 +72,13 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
       aria-modal="true"
       aria-label="話した内容の確認"
     >
-      <div className="bg-bg w-full max-w-md -rotate-1 rounded-3xl p-8 shadow-2xl">
+      <div className="bg-bg w-full max-w-md rounded-3xl p-8 shadow-2xl">
         <p className="font-disp text-txt mb-5 text-lg">こんなふうに聞こえたよ</p>
 
         {/* 紙を模した領域 */}
         <div className="rounded-2xl bg-[#fffdf8] p-5 shadow-inner">
           {isTyping ? (
+            // 演出中はタップまたはキー操作でスキップできる
             <div
               role="button"
               tabIndex={0}
@@ -88,6 +91,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
               <span className="bg-txt2 ml-0.5 inline-block h-4 w-0.5 animate-pulse align-middle" />
             </div>
           ) : (
+            // 演出後は編集可能なテキストエリアに切り替わる
             <textarea
               ref={textareaRef}
               value={editedText}
