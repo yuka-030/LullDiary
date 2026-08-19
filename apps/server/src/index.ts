@@ -1,11 +1,14 @@
 // apps/server/src/index.ts
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { migrate } from './db/migrate'
 import { generateStory, OllamaError } from './story/ollama'
 import { transcribe, WhisperError } from './stt/whisper'
 import { extractTags, TagExtractionError } from './tag/ollama'
 import type { VoiceProfile } from './tag/voice'
 import { synthesize, VoicevoxError } from './tts/voicevox'
+
+migrate()
 
 const app = new Hono()
 
