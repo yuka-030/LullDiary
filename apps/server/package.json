@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "setup:ollama": "ollama create lulldiary-story -f ollama/Modelfile && ollama create lulldiary-tag -f ollama/Modelfile.tag"
+    "setup:ollama": "ollama create lulldiary-story -f ollama/Modelfile && ollama create lulldiary-tag -f ollama/Modelfile.tag",
+    "setup:voicevox": "bun run scripts/setup-voicevox.ts"
   },
   "dependencies": {
     "hono": "^4.6.0",
