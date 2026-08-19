@@ -94,6 +94,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
             // 演出後は編集可能なテキストエリアに切り替わる
             <textarea
               ref={textareaRef}
+              lang="ja"
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
               style={paperStyle}
@@ -111,7 +112,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
           <button
             type="button"
             onClick={onCancel}
-            className="font-body text-txt2 hover:text-txt rounded-full px-5 py-2 transition-colors"
+            className="font-body bg-bg2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full px-6 py-2 transition-colors hover:text-white"
           >
             やめる
           </button>
@@ -119,7 +120,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
             type="button"
             onClick={() => onConfirm(editedText)}
             disabled={isTyping || editedText.trim().length === 0}
-            className="font-body bg-main rounded-full px-6 py-2 text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="font-body bg-glow hover:bg-main disabled:hover:bg-glow cursor-pointer rounded-full px-6 py-2 text-white [text-shadow:0_1px_2px_rgba(74,59,49,0.35)] transition-colors disabled:opacity-40"
           >
             物語にする
           </button>

@@ -246,7 +246,7 @@ export default function StoryScreen({ inputText, onSave }: Props) {
             <button
               type="button"
               onClick={startGeneration}
-              className="font-body border-txt2 text-txt2 hover:bg-txt2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
+              className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
             >
               つくり直す
             </button>
@@ -255,7 +255,7 @@ export default function StoryScreen({ inputText, onSave }: Props) {
               <button
                 type="button"
                 onClick={() => onSave(storyText)}
-                className="font-body bg-main rounded-full px-8 py-2 text-white transition-opacity hover:opacity-90"
+                className="font-body bg-main hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-white transition-colors"
               >
                 保存する
               </button>

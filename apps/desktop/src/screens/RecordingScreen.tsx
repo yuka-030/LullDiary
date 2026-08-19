@@ -5,17 +5,23 @@ import { useRecorder } from '../lib/useRecorder'
 import StoryScreen from './StoryScreen'
 
 export default function RecordingScreen() {
+  // 入力方法
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
+  // テキスト入力欄の内容
+  const [inputText, setInputText] = useState('')
   // 確定済みテキスト。物語生成画面への遷移トリガーを兼ねる
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
   const { status, start, stop, transcript, clearTranscript, errorMessage, level } = useRecorder()
 
   const isRecording = status === 'recording'
   const isProcessing = status === 'processing'
+  // 送信ボタンの有効判定
+  const canSubmitText = inputText.trim().length > 0
 
   // 声が大きいほど波紋が遠くまで広がる
   const rippleScale = 1.1 + level * 0.35
 
+  // 録音の開始と停止の切り替え
   async function handleMicClick() {
     if (isRecording) {
       await stop()
@@ -30,22 +36,40 @@ export default function RecordingScreen() {
     clearTranscript()
   }
 
+  // 入力中のテキストの確定
+  function handleTextSubmit() {
+    if (!canSubmitText) {
+      return
+    }
+
+    setConfirmedText(inputText.trim())
+  }
+
+  // 入力方法の切り替え
+  function toggleMode() {
+    setMode(mode === 'voice' ? 'text' : 'voice')
+  }
+
   // 保存が完了したら、記録画面の初期状態に戻す
   function handleSave() {
     setConfirmedText(null)
+    setInputText('')
   }
 
+  // 確定済みなら生成結果画面を表示
   if (confirmedText) {
     return <StoryScreen inputText={confirmedText} onSave={handleSave} />
   }
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-10 bg-bg px-6 py-12">
+    <main className="bg-bg flex min-h-screen w-full flex-col items-center justify-center gap-10 px-6 py-12">
       <p className="font-disp text-txt text-xl sm:text-2xl">今日は どんな１日だった？</p>
 
-      {mode === 'voice' ? (
-        <>
+      {/* 入力領域 */}
+      <div className="flex h-56 w-full max-w-md items-center justify-center">
+        {mode === 'voice' ? (
           <div className="relative flex h-56 w-56 items-center justify-center">
+            {/* 録音中の波紋 */}
             {isRecording && (
               <>
                 <HeartShape
@@ -62,16 +86,18 @@ export default function RecordingScreen() {
               </>
             )}
 
+            {/* 待機中の光 */}
             {!isRecording && (
               <HeartShape className="animate-glow-pulse text-glow absolute inset-0 h-full w-full" />
             )}
 
+            {/* 録音ボタン */}
             <button
               type="button"
               aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
               onClick={handleMicClick}
               disabled={isProcessing}
-              className="relative h-full w-full transition-transform hover:scale-105 disabled:opacity-60"
+              className="relative h-full w-full cursor-pointer transition-transform hover:scale-105 disabled:opacity-60"
             >
               <HeartShape
                 className={`absolute inset-0 h-full w-full transition-colors ${
@@ -85,33 +111,57 @@ export default function RecordingScreen() {
               )}
             </button>
           </div>
+        ) : (
+          // テキスト入力欄
+          <textarea
+            lang="ja"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            className="font-body border-bg2 text-txt placeholder:text-txt2 focus:border-main h-full w-full resize-none rounded-3xl border-2 bg-white/60 p-5 focus:outline-none"
+            placeholder="今日あったことを書いてみてね"
+          />
+        )}
+      </div>
 
-          <p className="font-body text-txt2 text-sm">
-            {isProcessing
-              ? 'いま聞いているよ…'
-              : isRecording
-                ? 'タップで録音終わるよ'
-                : 'タップして話しかけてね'}
-          </p>
+      {/* 案内文と送信ボタンの領域 */}
+      <div className="flex h-10 flex-col items-center justify-center gap-1">
+        {mode === 'voice' ? (
+          <>
+            {/* 録音状態に応じた案内文 */}
+            <p className="font-body text-txt2 text-sm">
+              {isProcessing
+                ? 'いま聞いているよ…'
+                : isRecording
+                  ? 'タップで録音終わるよ'
+                  : 'タップして話しかけてね'}
+            </p>
 
-          {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
-        </>
-      ) : (
-        <textarea
-          className="font-body border-bg2 text-txt placeholder:text-txt2 focus:border-main h-44 w-full max-w-md rounded-3xl border-2 bg-white/60 p-5 focus:outline-none"
-          placeholder="今日あったことを書いてみてね"
-        />
-      )}
+            {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
+          </>
+        ) : (
+          // テキストの送信ボタン
+          <button
+            type="button"
+            onClick={handleTextSubmit}
+            disabled={!canSubmitText}
+            className="font-body bg-glow hover:bg-main disabled:hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-sm text-white [text-shadow:0_1px_2px_rgba(74,59,49,0.35)] transition-colors disabled:opacity-40"
+          >
+            書けたよ
+          </button>
+        )}
+      </div>
 
+      {/* 入力方法の切り替えボタン */}
       <button
         type="button"
-        onClick={() => setMode(mode === 'voice' ? 'text' : 'voice')}
-        className="font-body border-sub text-sub hover:bg-sub flex items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
+        onClick={toggleMode}
+        className="font-body border-sub text-sub hover:bg-sub flex cursor-pointer items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
       >
         {mode === 'voice' ? <PencilIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />}
         {mode === 'voice' ? '文字で書く' : '声で話す'}
       </button>
 
+      {/* 音声入力の確認モーダル */}
       {transcript && (
         <TranscriptModal text={transcript} onConfirm={handleConfirm} onCancel={clearTranscript} />
       )}
@@ -119,6 +169,7 @@ export default function RecordingScreen() {
   )
 }
 
+// ハート型の図形
 function HeartShape({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg viewBox="0 0 100 92" className={className} style={style} aria-hidden="true">
@@ -130,6 +181,7 @@ function HeartShape({ className, style }: { className?: string; style?: React.CS
   )
 }
 
+// マイクアイコン
 function MicIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
@@ -148,6 +200,7 @@ function MicIcon({ className }: { className?: string }) {
   )
 }
 
+// 停止アイコン
 function StopIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
@@ -156,6 +209,7 @@ function StopIcon({ className }: { className?: string }) {
   )
 }
 
+// 鉛筆アイコン
 function PencilIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
