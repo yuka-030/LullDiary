@@ -1,10 +1,8 @@
-/* apps/desktop/src/index.css */
 @import 'tailwindcss';
 
 @theme {
   --font-disp: 'Fredoka', sans-serif;
   --font-body: 'Quicksand', sans-serif;
-
   --color-bg: #fbf2e7;
   --color-bg2: #f6e6d8;
   --color-main: #e8a24c;
@@ -17,12 +15,13 @@
 }
 
 body {
+  margin: 0;
   background-color: var(--color-bg);
   color: var(--color-txt);
   font-family: var(--font-body);
 }
 
-/* 待機中: ハートの形に沿って光がゆっくり広がっては消える */
+/* 待機中の光 */
 @keyframes glow-pulse {
   0% {
     transform: scale(1);
@@ -38,7 +37,7 @@ body {
   animation: glow-pulse 5s ease-out infinite;
 }
 
-/* 録音中: 水面の波紋のように中心から外へ広がりながら薄れて消える */
+/* 録音中の波紋 */
 @keyframes ripple {
   0% {
     transform: scale(1);
@@ -54,9 +53,772 @@ body {
   animation: ripple 5s ease-out infinite;
 }
 
+/* 物語画面のルート */
+.story-screen {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* エラーメッセージ */
+.story-error {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  z-index: 100;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* 閉じた本の配置枠 */
+.story-cover-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(42vw, 581px);
+  height: min(72vh, 562px);
+  transform: translate(calc(-50% + 16vw), -50%);
+  z-index: 10;
+}
+
+/* ページめくり中の表紙 */
+.story-cover-stage-behind {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.story-cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 表紙が開くための3D空間 */
+.book-cover-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 2200px;
+}
+
+/* 表紙下のページの層 */
+.book-cover-pages {
+  position: absolute;
+  inset: 0;
+  width: 130%;
+}
+
+/* 閉じた本のページ束 */
+.book-cover-page {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg2);
+  border: 1px solid rgba(74, 59, 49, 0.08);
+  box-shadow:
+    0 1px 0 rgba(74, 59, 49, 0.08),
+    0 3px 0 rgba(74, 59, 49, 0.05),
+    0 5px 0 rgba(74, 59, 49, 0.04);
+  clip-path: polygon(
+    0 1.8%,
+    8% 1%,
+    20% 0.4%,
+    35% 0.1%,
+    50% 0,
+    65% 0.1%,
+    80% 0.4%,
+    92% 1%,
+    100% 1.8%,
+    100% 98.2%,
+    92% 99%,
+    80% 99.6%,
+    65% 99.9%,
+    50% 100%,
+    35% 99.9%,
+    20% 99.6%,
+    8% 99%,
+    0 98.2%
+  );
+}
+
+.book-cover-page-1 {
+  transform: translate(9px, 15px);
+}
+
+.book-cover-page-2 {
+  transform: translate(5px, 8px);
+}
+
+.book-cover-page-3 {
+  transform: translate(2px, 3px);
+}
+
+/* 表紙本体 */
+.book-cover-body {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(
+    to right,
+    var(--color-glow) 0%,
+    var(--color-glow) 96%,
+    var(--color-main) 100%
+  );
+  box-shadow: 8px 12px 24px rgba(74, 59, 49, 0.12);
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--cover-progress, 0) * -180deg));
+  transition:
+    transform 2.5s ease-in-out,
+    box-shadow 0.3s ease;
+  width: 130%;
+  clip-path: polygon(
+    0 1.8%,
+    8% 1%,
+    20% 0.4%,
+    35% 0.1%,
+    50% 0,
+    65% 0.1%,
+    80% 0.4%,
+    92% 1%,
+    100% 1.8%,
+    100% 98.2%,
+    92% 99%,
+    80% 99.6%,
+    65% 99.9%,
+    50% 100%,
+    35% 99.9%,
+    20% 99.6%,
+    8% 99%,
+    0 98.2%
+  );
+}
+
+/* 背表紙 */
+.book-cover-spine {
+  position: absolute;
+  top: 1.8%;
+  bottom: 1.8%;
+  left: 0;
+  width: 5%;
+  background: rgba(74, 59, 49, 0.18);
+  z-index: 2;
+}
+
+.book-cover-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  margin-top: 34%;
+  justify-content: center;
+}
+
+.book-cover-title {
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-disp);
+  font-size: clamp(24px, 3vw, 40px);
+  letter-spacing: 0.08em;
+  opacity: calc(1 - var(--cover-progress, 0));
+  transition: opacity 0.8s ease;
+}
+
+/* 表紙下に隠れているページ */
+.book-cover-opening {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.book-cover-opening-inner {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: rotateY(calc(var(--cover-progress, 0) * -180deg));
+  transform-style: preserve-3d;
+}
+
+.book-cover-opening-page {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg);
+  backface-visibility: hidden;
+}
+
+/* 生成中の文言の配置枠 */
+.generation-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  visibility: hidden;
+}
+
+.story-page-turning + .generation-status {
+  visibility: visible;
+}
+
+.generation-status-text {
+  margin: 0;
+  color: var(--color-txt2);
+  font-size: 18px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.generation-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.generation-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-glow);
+}
+
+@keyframes generation-dot-pulse {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-5px) scale(1);
+    opacity: 1;
+  }
+}
+
+.generation-dot-1 {
+  animation: generation-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.generation-dot-2 {
+  animation: generation-dot-pulse 1.2s ease-in-out 0.16s infinite;
+}
+
+.generation-dot-3 {
+  animation: generation-dot-pulse 1.2s ease-in-out 0.32s infinite;
+}
+
+/* ページめくり中の本の配置枠 */
+.story-page-turning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(94vw, 1280px);
+  height: min(calc(100vh - 90px), 780px);
+  z-index: 15;
+  transform: translate(-50%, -50%);
+  animation: story-page-turning-enter 2s cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+
+/* 左半分から右へ広がるスライドイン */
+@keyframes story-page-turning-enter {
+  0% {
+    clip-path: inset(0 0 0 50%);
+  }
+
+  100% {
+    clip-path: inset(0);
+  }
+}
+
+/* ページがめくれるための3D空間 */
+.page-turning-book {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 2200px;
+}
+
+.page-turning-book-shadow {
+  position: absolute;
+  right: 4%;
+  bottom: 4%;
+  left: 4%;
+  height: 7%;
+  border-radius: 50%;
+  background: rgba(74, 59, 49, 0.12);
+  filter: blur(18px);
+}
+
+.page-turning-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 表紙のグラデーション */
+.book-gradient-left {
+  stop-color: var(--color-main);
+}
+
+.book-gradient-center {
+  stop-color: var(--color-glow);
+}
+
+.book-gradient-right {
+  stop-color: var(--color-main);
+}
+
+/* ページの厚みの配置枠 */
+.page-stack {
+  position: absolute;
+  top: 14%;
+  width: 45%;
+  height: 72%;
+  z-index: 4;
+}
+
+.page-stack-left {
+  left: 6%;
+}
+
+.page-stack-right {
+  right: 6%;
+}
+
+.page-stack-sheet {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px 18px 18px 8px;
+  background: var(--color-bg2);
+  box-shadow:
+    0 1px 0 rgba(74, 59, 49, 0.04),
+    0 3px 0 rgba(74, 59, 49, 0.025),
+    0 5px 0 rgba(74, 59, 49, 0.02);
+}
+
+/* 見開きページの配置枠 */
+.page-turning-surface {
+  position: absolute;
+  inset: 14% 6% 14%;
+  z-index: 10;
+  transform-style: preserve-3d;
+}
+
+/* 本の外側の縦線 */
+.page-turning-surface::before,
+.page-turning-surface::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(74, 59, 49, 0.1);
+  pointer-events: none;
+  z-index: 40;
+}
+
+.page-turning-surface::before {
+  left: -7px;
+  box-shadow:
+    -4px 0 0 rgba(74, 59, 49, 0.05),
+    -8px 0 0 rgba(74, 59, 49, 0.04);
+}
+
+.page-turning-surface::after {
+  right: -5px;
+  box-shadow:
+    4px 0 0 rgba(74, 59, 49, 0.05),
+    8px 0 0 rgba(74, 59, 49, 0.04);
+}
+
+.page-sheet {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--color-bg);
+  box-shadow: 0 5px 14px rgba(74, 59, 49, 0.07);
+}
+
+/* 左ページの輪郭 */
+.page-sheet-left {
+  left: 0;
+  border-radius: 0;
+  transform-origin: right center;
+  clip-path: polygon(0 1%, 99% 0, 100% 2%, 100% 98%, 99% 100%, 0 99%);
+}
+
+/* 右ページの輪郭 */
+.page-sheet-right {
+  right: 0;
+  border-radius: 0;
+  transform-origin: left center;
+  clip-path: polygon(0 2%, 1% 0, 100% 1%, 100% 99%, 1% 100%, 0 98%);
+}
+
+.page-sheet-inner {
+  position: absolute;
+  inset: 8% 10%;
+}
+
+/* ノートの罫線 */
+.page-lines {
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    rgba(140, 119, 104, 0.14) 27px,
+    rgba(140, 119, 104, 0.14) 28px
+  );
+}
+
+/* めくれている最中の1ページ */
+.turning-page {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  z-index: 30;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.turning-page-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: rotateY(180deg);
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+
+/* 見開き本の配置枠 */
+.story-open-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(95vw, 1320px);
+  height: min(calc(100vh - 90px), 780px);
+  transform: translate(-50%, -50%);
+}
+
+.story-open-book {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 物語文と写真ボタンの配置枠 */
+.story-book-content {
+  position: absolute;
+  inset: 14% 6%;
+  display: flex;
+  z-index: 5;
+}
+
+.story-book-content::before {
+  content: '';
+  position: absolute;
+  top: 1%;
+  bottom: 1%;
+  left: -7px;
+  width: 1px;
+  background: rgba(74, 59, 49, 0.08);
+  box-shadow:
+    -4px 0 0 rgba(74, 59, 49, 0.05),
+    -8px 0 0 rgba(74, 59, 49, 0.04);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.story-book-content::after {
+  content: '';
+  position: absolute;
+  top: 1%;
+  bottom: 1%;
+  right: -5px;
+  width: 1px;
+  background: rgba(74, 59, 49, 0.08);
+  box-shadow:
+    4px 0 0 rgba(74, 59, 49, 0.05),
+    8px 0 0 rgba(74, 59, 49, 0.04);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* 左ページ */
+.story-left-page {
+  position: relative;
+  width: 58%;
+  height: 100%;
+  padding: 4% 0;
+  box-sizing: border-box;
+  background-color: var(--color-bg);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    rgba(140, 119, 104, 0.14) 27px,
+    rgba(140, 119, 104, 0.14) 28px
+  );
+  background-origin: content-box;
+  background-clip: content-box;
+  padding-top: calc(3% + 28px);
+  padding-left: calc(4% + 15px);
+  background-repeat: repeat-y;
+  background-size: calc(100% + 45px) 28px;
+  clip-path: polygon(0 1%, 99% 0, 100% 2%, 100% 98%, 99% 100%, 0 99%);
+}
+
+.story-text {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 119, 104, 0.25) transparent;
+}
+
+.story-text p {
+  margin: 0;
+  padding: 0 0.7rem 0 4px;
+  line-height: 28.2px;
+  font-size: 0.96rem;
+}
+
+.story-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--color-txt2);
+  animation: story-cursor-blink 0.8s step-end infinite;
+}
+
+@keyframes story-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 右ページ */
+.story-right-page {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  padding: 8% 2%;
+  margin-right: 10px;
+  box-sizing: border-box;
+  background-color: var(--color-bg);
+  clip-path: polygon(0 2%, 1% 0, 100% 1%, 100% 99%, 1% 100%, 0 98%);
+}
+
+.story-photo-button {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(140, 119, 104, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.story-photo-button:hover {
+  border-color: rgba(232, 162, 76, 0.5);
+  background: rgba(232, 162, 76, 0.06);
+}
+
+.story-photo-icon {
+  display: flex;
+  width: 58px;
+  height: 58px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(232, 162, 76, 0.12);
+  color: var(--color-main);
+}
+
+/* 操作ボタンの配置 */
+.story-actions {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* 高さ800px以下、幅769px以上の画面 */
+@media (max-height: 800px) and (min-width: 769px) {
+  .story-cover-stage {
+    height: min(68vh, 500px);
+  }
+
+  .story-page-turning {
+    height: min(calc(100vh - 70px), 700px);
+  }
+
+  .story-open-stage {
+    height: min(calc(100vh - 70px), 700px);
+  }
+}
+
+/* 幅1023px以下の画面 */
+@media (max-width: 1023px) {
+  .story-cover-stage {
+    right: 4%;
+    width: min(34vw, 330px);
+  }
+
+  .story-page-turning {
+    width: 97vw;
+    height: min(calc(100vh - 90px), 650px);
+  }
+
+  .story-open-stage {
+    width: 97vw;
+    height: min(calc(100vh - 90px), 650px);
+  }
+
+  .story-left-page,
+  .story-right-page {
+    padding-left: 7%;
+    padding-right: 7%;
+  }
+}
+
+/* 幅768px以下の画面 */
+@media (max-width: 768px) {
+  .story-cover-stage {
+    top: 43%;
+    right: 50%;
+    width: min(60vw, 280px);
+    height: min(58vh, 400px);
+    transform: translate(50%, -50%);
+  }
+
+  .generation-status-text {
+    font-size: 15px;
+  }
+
+  .story-page-turning {
+    width: 104vw;
+    height: min(calc(100vh - 110px), 520px);
+  }
+
+  .story-open-stage {
+    width: 104vw;
+    height: min(calc(100vh - 110px), 520px);
+  }
+
+  .story-book-content {
+    inset: 14% 6%;
+  }
+
+  .story-left-page,
+  .story-right-page {
+    padding: 8% 6%;
+  }
+
+  .story-text {
+    font-size: 13px;
+  }
+
+  .story-text p {
+    line-height: 24px;
+  }
+
+  .story-left-page {
+    background-size: 100% 24px;
+  }
+}
+
+/* 幅480px以下の画面 */
+@media (max-width: 480px) {
+  .story-cover-stage {
+    width: min(66vw, 250px);
+    height: min(55vh, 350px);
+  }
+
+  .story-page-turning {
+    width: 108vw;
+    height: min(calc(100vh - 105px), 430px);
+  }
+
+  .story-open-stage {
+    width: 108vw;
+    height: min(calc(100vh - 105px), 430px);
+  }
+
+  .story-book-content {
+    inset: 14% 6%;
+  }
+
+  .story-left-page,
+  .story-right-page {
+    padding: 8% 5%;
+  }
+
+  .story-text {
+    font-size: 11px;
+  }
+
+  .story-text p {
+    line-height: 20px;
+  }
+
+  .story-left-page {
+    background-size: 100% 20px;
+  }
+
+  .story-photo-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .story-actions button {
+    padding-right: 16px;
+    padding-left: 16px;
+    font-size: 12px;
+  }
+}
+
+/* 動きを減らす設定 */
 @media (prefers-reduced-motion: reduce) {
-  .animate-glow-pulse,
-  .animate-ripple {
+  .book-cover-body,
+  .book-cover-opening-inner,
+  .turning-page,
+  .story-page-turning,
+  .generation-dot,
+  .story-cursor {
+    transition: none;
     animation: none;
   }
 }

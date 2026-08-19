@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "desktop",
+  "productName": "LullDiary",
   "version": "0.1.0",
   "identifier": "com.lulldiary.app",
   "build": {
@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "desktop",
+        "title": "LullDiary",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "center": true
       }
     ],
     "security": {

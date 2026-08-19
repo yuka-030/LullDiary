@@ -147,13 +147,7 @@ cd ../..
 ollama pull dsasai/llama3-elyza-jp-8b
 ```
 
-続いて、語り手の設定と生成パラメータを組み込んだカスタムモデルを作成します。設定は `apps/server/ollama/Modelfile` で管理しています。
-
-```bash
-cd apps/server
-ollama create lulldiary-story -f ollama/Modelfile
-cd ../..
-```
+語り手の設定と生成パラメータは `apps/server/ollama/Modelfile` と `apps/server/ollama/Modelfile.tag` で管理しています。`bun run dev` を実行するたびに、最新の Modelfile からカスタムモデルが自動的に作成されます。
 
 動作確認:
 

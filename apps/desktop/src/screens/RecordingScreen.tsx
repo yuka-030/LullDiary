@@ -2,9 +2,11 @@
 import { useState } from 'react'
 import TranscriptModal from '../components/TranscriptModal'
 import { useRecorder } from '../lib/useRecorder'
+import StoryScreen from './StoryScreen'
 
 export default function RecordingScreen() {
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
+  // 確定済みテキスト。物語生成画面への遷移トリガーを兼ねる
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
   const { status, start, stop, transcript, clearTranscript, errorMessage, level } = useRecorder()
 
@@ -22,10 +24,19 @@ export default function RecordingScreen() {
     }
   }
 
-  /** 確定したテキストを保持する。物語生成への受け渡しは #19 で実装する */
+  // 確定したテキストを保持し、生成結果画面へ遷移する
   function handleConfirm(text: string) {
     setConfirmedText(text)
     clearTranscript()
+  }
+
+  // 保存が完了したら、記録画面の初期状態に戻す
+  function handleSave() {
+    setConfirmedText(null)
+  }
+
+  if (confirmedText) {
+    return <StoryScreen inputText={confirmedText} onSave={handleSave} />
   }
 
   return (
@@ -84,10 +95,6 @@ export default function RecordingScreen() {
           </p>
 
           {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
-
-          {confirmedText && (
-            <p className="font-body text-txt w-full max-w-md text-sm">{confirmedText}</p>
-          )}
         </>
       ) : (
         <textarea

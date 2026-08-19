@@ -14,9 +14,10 @@
     "typescript-eslint": "^8.65.0"
   },
   "scripts": {
-    "dev": "concurrently \"bun run dev:server\" \"bun run dev:desktop\"",
+    "dev": "bun run setup:ollama && concurrently \"bun run dev:server\" \"bun run dev:desktop\"",
     "dev:server": "bun run --cwd apps/server dev",
     "dev:desktop": "bun run --cwd apps/desktop tauri dev",
+    "setup:ollama": "bun run --cwd apps/server setup:ollama",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

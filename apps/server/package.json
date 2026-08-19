@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "setup:ollama": "ollama create lulldiary-story -f ollama/Modelfile && ollama create lulldiary-tag -f ollama/Modelfile.tag"
   },
   "dependencies": {
     "hono": "^4.6.0",
