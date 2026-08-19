@@ -18,6 +18,7 @@ apps/desktop/.vite/
 
 apps/server/data/*.db
 apps/server/data/*.db-*
+apps/server/app_data/
 apps/server/*.wav
 *.wav
 query*.json
