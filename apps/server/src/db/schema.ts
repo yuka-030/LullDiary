@@ -1,4 +1,5 @@
 // apps/server/src/db/schema.ts
+import type { Tags } from '../tag/ollama'
 
 // 日記エントリ
 export type Entry = {
@@ -17,10 +18,7 @@ export type Entry = {
 export type InputType = 'voice' | 'text'
 
 // タグ情報
-export type Tags = {
-  シーン: string
-  感情: string[]
-}
+export type { Tags }
 
 // entriesテーブルの1行
 export type EntryRow = {
