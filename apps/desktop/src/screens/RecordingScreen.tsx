@@ -9,8 +9,10 @@ export default function RecordingScreen() {
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
   // テキスト入力欄の内容
   const [inputText, setInputText] = useState('')
-  // 確定済みテキスト。物語生成画面への遷移トリガーを兼ねる
+  // 確定済みの入力テキスト
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
+  // 確定した入力の入力方法
+  const [confirmedMode, setConfirmedMode] = useState<'voice' | 'text'>('voice')
   const { status, start, stop, transcript, clearTranscript, errorMessage, level } = useRecorder()
 
   const isRecording = status === 'recording'
@@ -32,6 +34,7 @@ export default function RecordingScreen() {
 
   // 確定したテキストを保持し、生成結果画面へ遷移する
   function handleConfirm(text: string) {
+    setConfirmedMode('voice')
     setConfirmedText(text)
     clearTranscript()
   }
@@ -42,6 +45,7 @@ export default function RecordingScreen() {
       return
     }
 
+    setConfirmedMode('text')
     setConfirmedText(inputText.trim())
   }
 
@@ -58,7 +62,7 @@ export default function RecordingScreen() {
 
   // 確定済みなら生成結果画面を表示
   if (confirmedText) {
-    return <StoryScreen inputText={confirmedText} onSave={handleSave} />
+    return <StoryScreen inputText={confirmedText} inputType={confirmedMode} onSave={handleSave} />
   }
 
   return (

@@ -8,7 +8,6 @@ export type Entry = {
   input_type: InputType
   raw_input_text: string
   story_text: string
-  recording_path: string | null
   narration_path: string | null
   tags: Tags
   photo_paths: string[]
@@ -27,7 +26,6 @@ export type EntryRow = {
   input_type: InputType
   raw_input_text: string
   story_text: string
-  recording_path: string | null
   narration_path: string | null
   tags: string
   photo_paths: string
@@ -41,7 +39,6 @@ export const CREATE_ENTRIES_TABLE = `
     input_type TEXT NOT NULL CHECK (input_type IN ('voice', 'text')),
     raw_input_text TEXT NOT NULL,
     story_text TEXT NOT NULL,
-    recording_path TEXT,
     narration_path TEXT,
     tags TEXT NOT NULL DEFAULT '{}',
     photo_paths TEXT NOT NULL DEFAULT '[]'

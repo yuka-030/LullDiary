@@ -7,7 +7,6 @@ export type CreateEntryInput = {
   input_type: InputType
   raw_input_text: string
   story_text: string
-  recording_path?: string | null
   narration_path?: string | null
   tags: Tags
   photo_paths?: string[]
@@ -28,15 +27,14 @@ export function createEntry(input: CreateEntryInput): Entry {
   db.prepare(
     `INSERT INTO entries (
       id, created_at, input_type, raw_input_text, story_text,
-      recording_path, narration_path, tags, photo_paths
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`
+      narration_path, tags, photo_paths
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`
   ).run(
     id,
     createdAt,
     input.input_type,
     input.raw_input_text,
     input.story_text,
-    input.recording_path ?? null,
     input.narration_path ?? null,
     JSON.stringify(input.tags),
     JSON.stringify(input.photo_paths ?? [])
@@ -48,11 +46,23 @@ export function createEntry(input: CreateEntryInput): Entry {
     input_type: input.input_type,
     raw_input_text: input.raw_input_text,
     story_text: input.story_text,
-    recording_path: input.recording_path ?? null,
     narration_path: input.narration_path ?? null,
     tags: input.tags,
     photo_paths: input.photo_paths ?? [],
   }
+}
+
+// メディアパスの更新
+export function updateEntryMediaPaths(
+  id: string,
+  narrationPath: string | null,
+  photoPaths: string[]
+): void {
+  db.prepare('UPDATE entries SET narration_path = ?, photo_paths = ? WHERE id = ?;').run(
+    narrationPath,
+    JSON.stringify(photoPaths),
+    id
+  )
 }
 
 // 日記エントリの一覧取得

@@ -108,7 +108,7 @@ cd apps/server/vendor
 git clone https://github.com/ggerganov/whisper.cpp.git
 cd whisper.cpp
 
-# 日本語モデル(small)のダウンロード
+# 日本語モデル(small)のダウンロード。models/ggml-small.bin に保存される
 # Windows
 .\models\download-ggml-model.cmd small
 # macOS / Linux
@@ -123,9 +123,9 @@ cmake --build build --config Release
 
 ```bash
 # Windows
-.\build\bin\Release\whisper-cli.exe -m ggml-small.bin -f samples\jfk.wav -l ja
+.\build\bin\Release\whisper-cli.exe -m models\ggml-small.bin -f samples\jfk.wav -l ja
 # macOS / Linux
-./build/bin/whisper-cli -m ggml-small.bin -f samples/jfk.wav -l ja
+./build/bin/whisper-cli -m models/ggml-small.bin -f samples/jfk.wav -l ja
 ```
 
 #### Cライブラリのビルド
@@ -159,7 +159,7 @@ ollama run lulldiary-story "今日は開発をした。新しい技術ばかり�
 
 #### VOICEVOX のセットアップ
 
-読み上げに使用するTTSエンジンです。[VOICEVOX](https://voicevox.hiroshiba.jp/) からダウンロードし、別プロセスとして起動しておいてください。
+読み上げに使用するTTSエンジンです。[VOICEVOX](https://voicevox.hiroshiba.jp/) からダウンロードしてください。`bun run dev` を実行すると、エンジンが起動していない場合は自動的に起動します。
 
 #### 環境変数の設定
 
@@ -194,12 +194,19 @@ lulldiary/
 │   │   └── src-tauri/              # Tauri (Rust) バックエンド
 │   └── server/                     # Hono (Bun) ローカルAPIサーバー
 │       ├── src/
-│       │   ├── db/                 # SQLite 接続モジュール
+│       │   ├── db/                 # SQLite 接続・スキーマ・マイグレーション
+│       │   ├── media/              # 音声・画像ファイルの保存
 │       │   ├── stt/                # whisper.cpp 呼び出し
 │       │   ├── story/              # Ollama 呼び出し・プロンプト
+│       │   ├── tag/                # タグ抽出
+│       │   ├── tts/                # VOICEVOX 呼び出し
 │       │   └── index.ts
 │       ├── ollama/                 # Modelfile (語り手の設定)
-│       ├── data/                   # SQLite DBファイル (git管理外)
+│       ├── scripts/                # 動作確認用スクリプト
+│       ├── app_data/               # 日記データの保存先 (git管理外)
+│       │   ├── db/                 # SQLite DBファイル
+│       │   ├── narration/          # 読み上げ音声
+│       │   └── photos/             # 添付写真
 │       └── vendor/                 # whisper.cpp 等の外部ツール (git管理外)
 ├── docs/
 │   ├── requirements.md

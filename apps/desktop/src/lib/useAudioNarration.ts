@@ -16,6 +16,7 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
   const [displayedLength, setDisplayedLength] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
+  // 文字送りのタイマーID
   const charIntervalRef = useRef<number | null>(null)
   // 表示中の文字数
   const displayedLengthRef = useRef(0)

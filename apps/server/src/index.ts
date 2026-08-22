@@ -1,9 +1,16 @@
 // apps/server/src/index.ts
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { createEntry, deleteEntry, getEntry, listEntries } from './db/entries'
-import { CreateEntrySchema, ListEntriesQuerySchema } from './db/entrySchema'
+import {
+  createEntry,
+  deleteEntry,
+  getEntry,
+  listEntries,
+  updateEntryMediaPaths,
+} from './db/entries'
+import { CreateEntryFieldsSchema, ListEntriesQuerySchema } from './db/entrySchema'
 import { migrate } from './db/migrate'
+import { saveNarration, savePhotos } from './media/save'
 import { generateStory, OllamaError } from './story/ollama'
 import { transcribe, WhisperError } from './stt/whisper'
 import { extractTags, TagExtractionError } from './tag/ollama'
@@ -142,16 +149,65 @@ app.post('/tts', async (c) => {
 
 // 日記エントリの新規作成
 app.post('/entries', async (c) => {
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreateEntrySchema.safeParse(body)
+  const form = await c.req.parseBody({ all: true }).catch(() => null)
+
+  if (!form) {
+    return c.json({ error: 'リクエストの形式が不正です' }, 400)
+  }
+
+  // テキストフィールドの取り出し
+  const tagsRaw = form.tags
+
+  let tagsValue: unknown = undefined
+
+  if (typeof tagsRaw === 'string') {
+    try {
+      tagsValue = JSON.parse(tagsRaw)
+    } catch {
+      return c.json({ error: 'tagsの形式が不正です' }, 400)
+    }
+  }
+
+  const parsed = CreateEntryFieldsSchema.safeParse({
+    input_type: form.input_type,
+    raw_input_text: form.raw_input_text,
+    story_text: form.story_text,
+    tags: tagsValue,
+  })
 
   if (!parsed.success) {
     return c.json({ error: '日記の内容が不正です' }, 400)
   }
 
+  // ファイルフィールドの取り出し
+  const narrationFile = form.narration instanceof File ? form.narration : undefined
+  const photoFiles = Array.isArray(form.photos)
+    ? form.photos.filter((item): item is File => item instanceof File)
+    : form.photos instanceof File
+      ? [form.photos]
+      : []
+
   try {
     const entry = createEntry(parsed.data)
-    return c.json({ entry }, 201)
+
+    // ファイルの保存とパスの紐付け
+    const narrationPath = narrationFile ? await saveNarration(entry.id, narrationFile) : null
+    const photoPaths = photoFiles.length > 0 ? await savePhotos(entry.id, photoFiles) : []
+
+    if (narrationPath || photoPaths.length > 0) {
+      updateEntryMediaPaths(entry.id, narrationPath, photoPaths)
+    }
+
+    return c.json(
+      {
+        entry: {
+          ...entry,
+          narration_path: narrationPath,
+          photo_paths: photoPaths,
+        },
+      },
+      201
+    )
   } catch {
     return c.json({ error: '日記の保存に失敗しました' }, 500)
   }
@@ -211,5 +267,6 @@ app.delete('/entries/:id', (c) => {
 
 export default {
   port: 3000,
+  hostname: '127.0.0.1',
   fetch: app.fetch,
 }
