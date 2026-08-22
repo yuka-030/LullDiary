@@ -10,7 +10,8 @@ const WHISPER_DIR = path.join(import.meta.dir, '..', '..', 'vendor', 'whisper.cp
 const WHISPER_CLI =
   platform() === 'win32' ? 'build\\bin\\Release\\whisper-cli.exe' : './build/bin/whisper-cli'
 
-const MODEL_FILE = 'ggml-small.bin'
+// モデルファイルのパス
+const MODEL_FILE = path.join('models', 'ggml-small.bin')
 
 // 句読点付きの出力を促すためのヒント
 const INITIAL_PROMPT = '今日は、天気が良くて、公園に行きました。楽しかったです。'

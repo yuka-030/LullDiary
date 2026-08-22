@@ -2,12 +2,41 @@
 import { db } from './client'
 import { CREATE_ENTRIES_CREATED_AT_INDEX, CREATE_ENTRIES_TABLE } from './schema'
 
+// recording_path列を除いたテーブルへの作り直し
+const DROP_RECORDING_PATH = `
+  CREATE TABLE entries_new (
+    id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    input_type TEXT NOT NULL CHECK (input_type IN ('voice', 'text')),
+    raw_input_text TEXT NOT NULL,
+    story_text TEXT NOT NULL,
+    narration_path TEXT,
+    tags TEXT NOT NULL DEFAULT '{}',
+    photo_paths TEXT NOT NULL DEFAULT '[]'
+  );
+
+  INSERT INTO entries_new (id, created_at, input_type, raw_input_text, story_text, narration_path, tags, photo_paths)
+  SELECT id, created_at, input_type, raw_input_text, story_text, narration_path, tags, photo_paths
+  FROM entries;
+
+  DROP TABLE entries;
+
+  ALTER TABLE entries_new RENAME TO entries;
+`
+
 // バージョンごとのマイグレーション
 const MIGRATIONS: { version: number; up: () => void }[] = [
   {
     version: 1,
     up: () => {
       db.exec(CREATE_ENTRIES_TABLE)
+      db.exec(CREATE_ENTRIES_CREATED_AT_INDEX)
+    },
+  },
+  {
+    version: 2,
+    up: () => {
+      db.exec(DROP_RECORDING_PATH)
       db.exec(CREATE_ENTRIES_CREATED_AT_INDEX)
     },
   },

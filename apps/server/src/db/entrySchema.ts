@@ -8,15 +8,12 @@ const TagsSchema = z.object({
   感情: z.array(z.enum(TAG_OPTIONS.感情)).min(1),
 })
 
-// POST /entries のリクエストボディ
-export const CreateEntrySchema = z.object({
+// POST /entries のテキストフィールド
+export const CreateEntryFieldsSchema = z.object({
   input_type: z.enum(['voice', 'text']),
   raw_input_text: z.string().min(1),
   story_text: z.string().min(1),
-  recording_path: z.string().nullish(),
-  narration_path: z.string().nullish(),
   tags: TagsSchema,
-  photo_paths: z.array(z.string()).optional(),
 })
 
 // GET /entries のクエリパラメータ

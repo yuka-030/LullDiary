@@ -3,14 +3,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import AudioPlayButton from '../components/AudioPlayButton'
 import BookCover from '../components/BookCover'
 import PageTurningBook from '../components/PageTurningBook'
+import { createEntry } from '../lib/entryClient'
 import { useAudioNarration } from '../lib/useAudioNarration'
-import { useStory } from '../lib/useStory'
+import { useStory, type InputType } from '../lib/useStory'
 
 type Props = {
   // 記録画面で確定した入力テキスト
   inputText: string
-  // 保存する物語テキスト
-  onSave: (storyText: string) => void
+  // 入力方法
+  inputType: InputType
+  // 保存が完了した後の処理
+  onSave: () => void
 }
 
 type StoryStage = 'cover' | 'turning' | 'open'
@@ -18,17 +21,27 @@ type StoryStage = 'cover' | 'turning' | 'open'
 // 表紙を消すまでの時間
 const COVER_HIDE_MS = 1200
 
-export default function StoryScreen({ inputText, onSave }: Props) {
-  const { status, storyText, audioUrl, errorMessage, generate, audioRef } = useStory()
+export default function StoryScreen({ inputText, inputType, onSave }: Props) {
+  const { status, storyText, audioUrl, tags, errorMessage, generate, audioRef, narrationBlobRef } =
+    useStory()
 
+  // 表示中の演出段階
   const [stage, setStage] = useState<StoryStage>('cover')
+  // 表紙の開き具合
   const [coverProgress, setCoverProgress] = useState(0)
+  // ページめくりの進行度
   const [pageProgress, setPageProgress] = useState(0)
   const [isCoverVisible, setIsCoverVisible] = useState(true)
+  const [photo, setPhoto] = useState<File | null>(null)
+  // 選択した写真のプレビューURL
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const coverTimerRef = useRef<number | null>(null)
   const coverHideTimerRef = useRef<number | null>(null)
   const pageTimerRef = useRef<number | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const isReady = status === 'ready'
 
@@ -57,18 +70,32 @@ export default function StoryScreen({ inputText, onSave }: Props) {
     }
   }, [])
 
+  // 選択中の写真の解除
+  const clearPhoto = useCallback(() => {
+    setPhoto(null)
+    setPhotoUrl((previous) => {
+      if (previous) {
+        URL.revokeObjectURL(previous)
+      }
+
+      return null
+    })
+  }, [])
+
   // 演出状態を初期化して生成開始
   const startGeneration = useCallback(() => {
     clearTimers()
     reset()
+    clearPhoto()
 
     setStage('cover')
     setCoverProgress(0)
     setPageProgress(0)
     setIsCoverVisible(true)
+    setSaveError(null)
 
     generate(inputText)
-  }, [clearTimers, generate, inputText, reset])
+  }, [clearPhoto, clearTimers, generate, inputText, reset])
 
   // 初回表示時に生成開始
   useEffect(() => {
@@ -77,8 +104,9 @@ export default function StoryScreen({ inputText, onSave }: Props) {
     return () => {
       clearTimers()
       reset()
+      clearPhoto()
     }
-  }, [clearTimers, inputText, reset, startGeneration])
+  }, [clearPhoto, clearTimers, inputText, reset, startGeneration])
 
   // 閉じた本を2秒表示して表紙を開く
   useEffect(() => {
@@ -162,9 +190,55 @@ export default function StoryScreen({ inputText, onSave }: Props) {
     setIsCoverVisible(false)
   }, [clearTimers, isReady])
 
+  // 写真の選択
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+
+    e.target.value = ''
+
+    if (!file) {
+      return
+    }
+
+    // 前のプレビューURLの解放
+    if (photoUrl) {
+      URL.revokeObjectURL(photoUrl)
+    }
+
+    setPhoto(file)
+    setPhotoUrl(URL.createObjectURL(file))
+  }
+
+  // 日記の保存
+  async function handleSave() {
+    if (!tags) {
+      return
+    }
+
+    setIsSaving(true)
+    setSaveError(null)
+
+    try {
+      await createEntry({
+        inputType,
+        rawInputText: inputText,
+        storyText,
+        tags,
+        narration: narrationBlobRef.current ?? undefined,
+        photos: photo ? [photo] : [],
+      })
+
+      onSave()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <main className="story-screen">
-      {errorMessage && <p className="story-error">{errorMessage}</p>}
+      {(errorMessage || saveError) && <p className="story-error">{errorMessage ?? saveError}</p>}
 
       {/* 開いた表紙をスライドインの間だけ背面に残す */}
       {isCoverVisible && (stage === 'cover' || stage === 'turning') && (
@@ -226,14 +300,45 @@ export default function StoryScreen({ inputText, onSave }: Props) {
                 </div>
               </div>
 
-              {/* 右ページ:写真追加ボタンを表示 */}
+              {/* 右ページ:写真を表示 */}
               <div className="story-right-page">
-                <button type="button" className="story-photo-button">
-                  <span className="story-photo-icon">
-                    <PhotoIcon />
-                  </span>
-                  <span className="story-photo-label">写真を追加</span>
-                </button>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+
+                {photoUrl ? (
+                  <div className="story-photo-frame">
+                    <img src={photoUrl} alt="添付した写真" className="story-photo-image" />
+
+                    <div className="story-photo-controls">
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        className="story-photo-control"
+                      >
+                        変える
+                      </button>
+                      <button type="button" onClick={clearPhoto} className="story-photo-control">
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="story-photo-button"
+                  >
+                    <span className="story-photo-icon">
+                      <PhotoIcon />
+                    </span>
+                    <span className="story-photo-label">写真を追加</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -254,10 +359,11 @@ export default function StoryScreen({ inputText, onSave }: Props) {
             {!isTyping && (
               <button
                 type="button"
-                onClick={() => onSave(storyText)}
-                className="font-body bg-main hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-white transition-colors"
+                onClick={handleSave}
+                disabled={isSaving || !tags}
+                className="font-body bg-main hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               >
-                保存する
+                {isSaving ? '保存中…' : '保存する'}
               </button>
             )}
           </div>

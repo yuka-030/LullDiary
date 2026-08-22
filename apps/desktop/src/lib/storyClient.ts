@@ -1,4 +1,5 @@
 // apps/desktop/src/lib/storyClient.ts
+import type { Tags } from './entryClient'
 
 // ローカルAPIサーバー(Hono)のベースURL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -40,4 +41,22 @@ export async function requestNarration(text: string): Promise<ArrayBuffer> {
   }
 
   return response.arrayBuffer()
+}
+
+// テキストを /extract-tags に送信し、シーンと感情のタグを受け取る
+export async function requestTags(text: string): Promise<Tags> {
+  const response = await fetch(`${API_BASE_URL}/extract-tags`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  })
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const message = body && typeof body.error === 'string' ? body.error : 'タグの抽出に失敗しました'
+    throw new Error(message)
+  }
+
+  const body = await response.json()
+  return body.tags as Tags
 }

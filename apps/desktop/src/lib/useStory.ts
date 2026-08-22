@@ -1,46 +1,57 @@
 // apps/desktop/src/lib/useStory.ts
 import { useCallback, useRef, useState } from 'react'
-import { requestNarration, requestStory } from './storyClient'
+import type { Tags } from './entryClient'
+import { requestNarration, requestStory, requestTags } from './storyClient'
 
 export type StoryStatus = 'generating' | 'ready' | 'error'
+
+export type InputType = 'voice' | 'text'
 
 export function useStory() {
   const [status, setStatus] = useState<StoryStatus>('generating')
   const [storyText, setStoryText] = useState('')
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [tags, setTags] = useState<Tags | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  // 直前に作成したBlob URL。解放漏れを防ぐために保持する
+  // 解放対象のBlob URL
   const previousAudioUrlRef = useRef<string | null>(null)
-  // 何回目の生成かを示す番号。古い呼び出しの結果を無視するために使う
+  // 保存用の読み上げ音声データ
+  const narrationBlobRef = useRef<Blob | null>(null)
+  // 生成の実行回数
   const generationIdRef = useRef(0)
 
-  // 確定したテキストから物語と読み上げ音声を生成する
+  // 確定したテキストから物語・読み上げ音声・タグを生成する
   const generate = useCallback(async (input: string) => {
     const generationId = ++generationIdRef.current
 
     setStatus('generating')
     setErrorMessage(null)
+    setTags(null)
+    narrationBlobRef.current = null
 
     try {
-      // 物語文を先に取得する
       const story = await requestStory(input)
 
-      // 待っている間に別の生成が始まっていれば、この結果は捨てる
+      // 新しい生成が始まっている場合は結果を破棄
       if (generationId !== generationIdRef.current) {
         return
       }
 
       setStoryText(story)
 
-      // 物語文をもとに読み上げ音声を取得する
-      const narration = await requestNarration(story)
+      // 読み上げ音声とタグの並行取得
+      const [narration, extractedTags] = await Promise.all([
+        requestNarration(story),
+        requestTags(story),
+      ])
 
       if (generationId !== generationIdRef.current) {
         return
       }
 
-      // 古いBlob URLが残っていれば解放してから、新しいものに差し替える
+      // 古いBlob URLの解放
       if (previousAudioUrlRef.current) {
         URL.revokeObjectURL(previousAudioUrlRef.current)
       }
@@ -48,7 +59,9 @@ export function useStory() {
       const blob = new Blob([narration], { type: 'audio/wav' })
       const url = URL.createObjectURL(blob)
       previousAudioUrlRef.current = url
+      narrationBlobRef.current = blob
       setAudioUrl(url)
+      setTags(extractedTags)
 
       setStatus('ready')
     } catch (err) {
@@ -61,5 +74,5 @@ export function useStory() {
     }
   }, [])
 
-  return { status, storyText, audioUrl, errorMessage, generate, audioRef }
+  return { status, storyText, audioUrl, tags, errorMessage, generate, audioRef, narrationBlobRef }
 }

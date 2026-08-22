@@ -1,28 +1,21 @@
 // apps/desktop/src/lib/useRecorder.ts
 import { invoke } from '@tauri-apps/api/core'
-import { appDataDir, join } from '@tauri-apps/api/path'
-import { exists, mkdir, writeFile } from '@tauri-apps/plugin-fs'
 import { useCallback, useRef, useState } from 'react'
 import { requestTranscription } from './sttClient'
 import { encodeWav } from './wavEncoder'
 
 export type RecorderStatus = 'idle' | 'recording' | 'processing' | 'error'
 
-/** 話し方の特徴。タグ抽出の手がかりとして使う */
+// 話し方の特徴
 export type VoiceProfile = {
-  /** 発話中の平均音量(0〜1) */
   averageLevel: number
-  /** 音量の変動の大きさ。抑揚があるほど大きくなる */
   levelVariation: number
 }
 
-/**
- * whisper.cpp は 16kHz モノラルの音声を前提としている。
- * 後段でリサンプリングすると変換ロスが生じるため、録音時点でこのレートに揃える。
- */
+// 目標サンプルレート
 const TARGET_SAMPLE_RATE = 16000
 
-/** 無音とみなす音量。統計から除くために使う */
+// 無音判定の閾値
 const SILENCE_LEVEL = 0.01
 
 export function useRecorder() {
@@ -30,13 +23,16 @@ export function useRecorder() {
   const [transcript, setTranscript] = useState<string | null>(null)
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  // 録音中の音量
   const [level, setLevel] = useState(0)
 
   const audioContextRef = useRef<AudioContext | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
+  // 録音したPCMデータ
   const chunksRef = useRef<Float32Array[]>([])
+  // 録音中の音量の履歴
   const levelsRef = useRef<number[]>([])
 
   const start = useCallback(async () => {
@@ -45,7 +41,7 @@ export function useRecorder() {
     setVoiceProfile(null)
 
     try {
-      // マイクアクセス許可のリクエスト
+      // マイクアクセス許可の取得
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
@@ -54,17 +50,14 @@ export function useRecorder() {
       })
       streamRef.current = stream
 
-      /**
-       * AudioContext にもレートを指定する。
-       * マイクが 16kHz に対応していない場合でも、ブラウザ側で変換される。
-       */
+      // AudioContextの生成
       const audioContext = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE })
       audioContextRef.current = audioContext
 
       const source = audioContext.createMediaStreamSource(stream)
       sourceRef.current = source
 
-      // ScriptProcessorNodeでPCMデータを蓄積していく
+      // PCMデータの蓄積
       const processor = audioContext.createScriptProcessor(4096, 1, 1)
       processorRef.current = processor
       chunksRef.current = []
@@ -74,7 +67,7 @@ export function useRecorder() {
         const input = event.inputBuffer.getChannelData(0)
         chunksRef.current.push(new Float32Array(input))
 
-        // 音量(RMS)を算出する。波紋アニメーションと話し方の分析に使う
+        // 音量(RMS)の算出
         const sumOfSquares = input.reduce((sum, sample) => sum + sample * sample, 0)
         const rms = Math.sqrt(sumOfSquares / input.length)
         levelsRef.current.push(rms)
@@ -110,7 +103,7 @@ export function useRecorder() {
 
     const sampleRate = audioContext.sampleRate
 
-    // 蓄積したチャンクを1本のFloat32Arrayに結合
+    // チャンクの結合
     const totalLength = chunksRef.current.reduce((sum, chunk) => sum + chunk.length, 0)
     const merged = new Float32Array(totalLength)
     let offset = 0
@@ -122,27 +115,12 @@ export function useRecorder() {
     await audioContext.close()
 
     try {
-      /**
-       * 自作Cライブラリで前処理する。
-       * 音量を揃えたうえで発話の有無を確認し、前後の無音を除いたサンプル列が返る。
-       */
+      // 音声前処理
       const processed = await invoke<number[]>('preprocess_audio', {
         samples: Array.from(merged),
       })
 
       const wavBuffer = encodeWav(new Float32Array(processed), sampleRate)
-
-      // 前処理済みの音声を、後から聞き返せるよう保存する
-      const dataDir = await appDataDir()
-      const audioDir = await join(dataDir, 'audio')
-
-      if (!(await exists(audioDir))) {
-        await mkdir(audioDir, { recursive: true })
-      }
-
-      const filePath = await join(audioDir, `${Date.now()}.wav`)
-      await writeFile(filePath, new Uint8Array(wavBuffer))
-
       const text = await requestTranscription(wavBuffer)
 
       setVoiceProfile(summarizeLevels(levelsRef.current))
@@ -154,7 +132,7 @@ export function useRecorder() {
     }
   }, [])
 
-  /** モーダルを閉じる際に認識結果を破棄する */
+  // 認識結果の破棄
   const clearTranscript = useCallback(() => {
     setTranscript(null)
   }, [])
@@ -171,10 +149,7 @@ export function useRecorder() {
   }
 }
 
-/**
- * 録音中に蓄積した音量から、話し方の特徴を求める。
- * 無音部分は話し方を表さないため、統計から除いている。
- */
+// 話し方の特徴の算出
 function summarizeLevels(levels: number[]): VoiceProfile | null {
   const voiced = levels.filter((value) => value > SILENCE_LEVEL)
 
