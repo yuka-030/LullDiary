@@ -12,12 +12,20 @@ type Options = {
   audioRef: React.RefObject<HTMLAudioElement | null>
 }
 
+// 読み上げ音声がない場合の1文字あたりの表示間隔
+const FALLBACK_CHAR_INTERVAL_MS = 80
+
+// 音声に対する文字送りの間隔の倍率
+const CHAR_INTERVAL_RATIO = 1.085
+
 export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: Options) {
   const [displayedLength, setDisplayedLength] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
   // 文字送りのタイマーID
   const charIntervalRef = useRef<number | null>(null)
+  // 読み上げ音声なしの文字送りのタイマーID
+  const fallbackIntervalRef = useRef<number | null>(null)
   // 表示中の文字数
   const displayedLengthRef = useRef(0)
   // 再生開始済みフラグ
@@ -30,6 +38,14 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
     if (charIntervalRef.current !== null) {
       window.clearInterval(charIntervalRef.current)
       charIntervalRef.current = null
+    }
+  }, [])
+
+  // 読み上げ音声なしの文字送りの停止
+  const stopFallbackInterval = useCallback(() => {
+    if (fallbackIntervalRef.current !== null) {
+      window.clearInterval(fallbackIntervalRef.current)
+      fallbackIntervalRef.current = null
     }
   }, [])
 
@@ -54,7 +70,7 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
     }
 
     const remainingMs = Math.max(0, (audio.duration - audio.currentTime) * 1000)
-    const intervalMs = Math.max(20, remainingMs / remainingLength)
+    const intervalMs = Math.max(20, (remainingMs / remainingLength) * CHAR_INTERVAL_RATIO)
 
     // 文字表示数を1文字ずつ増加
     charIntervalRef.current = window.setInterval(() => {
@@ -75,6 +91,7 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
   // 再生状態の初期化
   const reset = useCallback(() => {
     stopCharInterval()
+    stopFallbackInterval()
 
     const audio = audioRef.current
 
@@ -88,7 +105,7 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
 
     setDisplayedLength(0)
     setIsPaused(false)
-  }, [audioRef, stopCharInterval])
+  }, [audioRef, stopCharInterval, stopFallbackInterval])
 
   // 音声と文字送りの再生と停止の切り替え
   const togglePause = useCallback(() => {
@@ -122,6 +139,37 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
       hasStartedPlaybackRef.current = false
     }
   }, [isActive])
+
+  // 読み上げ音声がない場合の固定速度での文字送り
+  useEffect(() => {
+    if (!isActive || audioUrl || storyText.length === 0) {
+      return
+    }
+
+    displayedLengthRef.current = 0
+
+    setDisplayedLength(0)
+    setIsPaused(false)
+
+    // 文字表示数を1文字ずつ増加
+    fallbackIntervalRef.current = window.setInterval(() => {
+      setDisplayedLength((length) => {
+        const nextLength = Math.min(length + 1, storyText.length)
+
+        displayedLengthRef.current = nextLength
+
+        if (nextLength >= storyText.length) {
+          stopFallbackInterval()
+        }
+
+        return nextLength
+      })
+    }, FALLBACK_CHAR_INTERVAL_MS)
+
+    return () => {
+      stopFallbackInterval()
+    }
+  }, [audioUrl, isActive, stopFallbackInterval, storyText])
 
   // 音声と文字送りの開始
   useEffect(() => {
