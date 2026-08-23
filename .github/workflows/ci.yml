@@ -133,6 +133,8 @@ jobs:
 
       - name: Run tests (apps/desktop)
         working-directory: apps/desktop
+        env:
+          VITE_API_BASE_URL: http://127.0.0.1:3000
         run: bun test
 
   test-c:
