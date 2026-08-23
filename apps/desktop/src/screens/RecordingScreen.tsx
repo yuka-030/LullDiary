@@ -4,7 +4,12 @@ import TranscriptModal from '../components/TranscriptModal'
 import { useRecorder } from '../lib/useRecorder'
 import StoryScreen from './StoryScreen'
 
-export default function RecordingScreen() {
+type Props = {
+  // ホーム画面への遷移
+  onBack: () => void
+}
+
+export default function RecordingScreen({ onBack }: Props) {
   // 入力方法
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
   // テキスト入力欄の内容
@@ -163,6 +168,15 @@ export default function RecordingScreen() {
       >
         {mode === 'voice' ? <PencilIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />}
         {mode === 'voice' ? '文字で書く' : '声で話す'}
+      </button>
+
+      {/* ホーム画面への戻り */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="font-body text-txt2 hover:text-txt cursor-pointer text-sm transition-colors"
+      >
+        もどる
       </button>
 
       {/* 音声入力の確認モーダル */}
