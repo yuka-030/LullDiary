@@ -12,6 +12,9 @@ type Options = {
   audioRef: React.RefObject<HTMLAudioElement | null>
 }
 
+// 読み上げ音声がない場合の1文字あたりの表示間隔
+const FALLBACK_CHAR_INTERVAL_MS = 80
+
 export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: Options) {
   const [displayedLength, setDisplayedLength] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -22,6 +25,8 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
   const displayedLengthRef = useRef(0)
   // 再生開始済みフラグ
   const hasStartedPlaybackRef = useRef(false)
+  // 文字送り開始済みフラグ
+  const hasStartedFallbackRef = useRef(false)
 
   const isTyping = displayedLength < storyText.length
 
@@ -32,6 +37,29 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
       charIntervalRef.current = null
     }
   }, [])
+
+  // 指定間隔での文字送りの開始
+  const runCharInterval = useCallback(
+    (intervalMs: number) => {
+      stopCharInterval()
+
+      // 文字表示数を1文字ずつ増加
+      charIntervalRef.current = window.setInterval(() => {
+        setDisplayedLength((length) => {
+          const nextLength = Math.min(length + 1, storyText.length)
+
+          displayedLengthRef.current = nextLength
+
+          if (nextLength >= storyText.length) {
+            stopCharInterval()
+          }
+
+          return nextLength
+        })
+      }, intervalMs)
+    },
+    [stopCharInterval, storyText]
+  )
 
   // 残り時間と残り文字数からの文字送りの開始
   const startCharInterval = useCallback(() => {
@@ -45,8 +73,6 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
       return
     }
 
-    stopCharInterval()
-
     const remainingLength = storyText.length - displayedLengthRef.current
 
     if (remainingLength <= 0) {
@@ -56,21 +82,23 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
     const remainingMs = Math.max(0, (audio.duration - audio.currentTime) * 1000)
     const intervalMs = Math.max(20, remainingMs / remainingLength)
 
-    // 文字表示数を1文字ずつ増加
-    charIntervalRef.current = window.setInterval(() => {
-      setDisplayedLength((length) => {
-        const nextLength = Math.min(length + 1, storyText.length)
+    runCharInterval(intervalMs)
+  }, [audioRef, runCharInterval, storyText])
 
-        displayedLengthRef.current = nextLength
+  // 読み上げ音声がない場合の固定速度での文字送りの開始
+  const startFallbackCharInterval = useCallback(() => {
+    if (storyText.length === 0) {
+      return
+    }
 
-        if (nextLength >= storyText.length) {
-          stopCharInterval()
-        }
+    const remainingLength = storyText.length - displayedLengthRef.current
 
-        return nextLength
-      })
-    }, intervalMs)
-  }, [audioRef, stopCharInterval, storyText])
+    if (remainingLength <= 0) {
+      return
+    }
+
+    runCharInterval(FALLBACK_CHAR_INTERVAL_MS)
+  }, [runCharInterval, storyText])
 
   // 再生状態の初期化
   const reset = useCallback(() => {
@@ -84,6 +112,7 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
     }
 
     hasStartedPlaybackRef.current = false
+    hasStartedFallbackRef.current = false
     displayedLengthRef.current = 0
 
     setDisplayedLength(0)
@@ -120,8 +149,33 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
   useEffect(() => {
     if (!isActive) {
       hasStartedPlaybackRef.current = false
+      hasStartedFallbackRef.current = false
     }
   }, [isActive])
+
+  // 読み上げ音声がない場合の文字送りの開始
+  useEffect(() => {
+    if (!isActive || audioUrl || storyText.length === 0) {
+      return
+    }
+
+    if (hasStartedFallbackRef.current) {
+      return
+    }
+
+    hasStartedFallbackRef.current = true
+
+    displayedLengthRef.current = 0
+
+    setDisplayedLength(0)
+    setIsPaused(false)
+
+    startFallbackCharInterval()
+
+    return () => {
+      stopCharInterval()
+    }
+  }, [audioUrl, isActive, startFallbackCharInterval, stopCharInterval, storyText])
 
   // 音声と文字送りの開始
   useEffect(() => {
@@ -134,6 +188,7 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
     }
 
     hasStartedPlaybackRef.current = true
+    hasStartedFallbackRef.current = false
 
     const audio = audioRef.current
 
@@ -144,6 +199,8 @@ export function useAudioNarration({ audioUrl, storyText, isActive, audioRef }: O
     audio.pause()
     audio.currentTime = 0
     displayedLengthRef.current = 0
+
+    setDisplayedLength(0)
     setIsPaused(false)
 
     // メタデータ読み込み後の再生開始

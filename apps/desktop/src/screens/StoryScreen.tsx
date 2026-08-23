@@ -22,8 +22,18 @@ type StoryStage = 'cover' | 'turning' | 'open'
 const COVER_HIDE_MS = 1200
 
 export default function StoryScreen({ inputText, inputType, onSave }: Props) {
-  const { status, storyText, audioUrl, tags, errorMessage, generate, audioRef, narrationBlobRef } =
-    useStory()
+  const {
+    status,
+    narrationStatus,
+    storyText,
+    audioUrl,
+    tags,
+    errorMessage,
+    generate,
+    retryNarration,
+    audioRef,
+    narrationBlobRef,
+  } = useStory()
 
   // 表示中の演出段階
   const [stage, setStage] = useState<StoryStage>('cover')
@@ -43,7 +53,8 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
   const pageTimerRef = useRef<number | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
-  const isReady = status === 'ready'
+  // 読み上げ音声の成否が決着してから見開きへ切り替える
+  const isReady = status === 'ready' && narrationStatus !== 'generating'
 
   const { displayedLength, isPaused, isTyping, togglePause, reset } = useAudioNarration({
     audioUrl,
@@ -238,7 +249,8 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
 
   return (
     <main className="story-screen">
-      {(errorMessage || saveError) && <p className="story-error">{errorMessage ?? saveError}</p>}
+      {errorMessage && <p className="story-error">{errorMessage}</p>}
+      {saveError && <p className="story-error">{saveError}</p>}
 
       {/* 開いた表紙をスライドインの間だけ背面に残す */}
       {isCoverVisible && (stage === 'cover' || stage === 'turning') && (
@@ -345,15 +357,38 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
 
           {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
+          {/* 読み上げ音声の生成に失敗した場合の案内 */}
+          {narrationStatus === 'error' && (
+            <p className="story-error">
+              音声の作成に失敗しました。
+              <br />
+              物語はそのままで音声だけつくり直しますか?
+            </p>
+          )}
+
           <div className="story-actions">
             {audioUrl && <AudioPlayButton isPaused={isPaused} onToggle={togglePause} />}
+
+            {narrationStatus === 'generating' && (
+              <span className="font-body text-txt2 px-6 py-2">音声をつくっているよ…</span>
+            )}
+
+            {narrationStatus === 'error' && (
+              <button
+                type="button"
+                onClick={retryNarration}
+                className="font-body border-sub text-sub hover:bg-sub cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
+              >
+                音声をつくり直す
+              </button>
+            )}
 
             <button
               type="button"
               onClick={startGeneration}
               className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
             >
-              つくり直す
+              {narrationStatus === 'error' ? '物語からつくり直す' : 'つくり直す'}
             </button>
 
             {!isTyping && (
