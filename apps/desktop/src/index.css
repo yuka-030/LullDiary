@@ -53,6 +53,21 @@ body {
   animation: ripple 5s ease-out infinite;
 }
 
+/* テキスト化中の案内文 */
+@keyframes text-fade {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-text-fade {
+  animation: text-fade 5s ease-in-out infinite;
+}
+
 /* もどるボタン */
 .back-link {
   padding: 3px 10px;

@@ -1,7 +1,6 @@
 // apps/desktop/src/screens/RecordingScreen.tsx
-import { useState } from 'react'
 import TranscriptModal from '../components/TranscriptModal'
-import { useRecorder } from '../lib/useRecorder'
+import { useRecordingFlow } from '../lib/useRecordingFlow'
 import StoryScreen from './StoryScreen'
 
 type Props = {
@@ -12,69 +11,36 @@ type Props = {
 }
 
 export default function RecordingScreen({ onBack, onSaved }: Props) {
-  // 入力方法
-  const [mode, setMode] = useState<'voice' | 'text'>('voice')
-  // テキスト入力欄の内容
-  const [inputText, setInputText] = useState('')
-  // 確定済みの入力テキスト
-  const [confirmedText, setConfirmedText] = useState<string | null>(null)
-  // 確定した入力の入力方法
-  const [confirmedMode, setConfirmedMode] = useState<'voice' | 'text'>('voice')
-  const { status, start, stop, transcript, clearTranscript, errorMessage, level } = useRecorder()
+  const {
+    mode,
+    inputText,
+    setInputText,
+    confirmedText,
+    confirmedMode,
+    isRecording,
+    isProcessing,
+    canSubmitText,
+    level,
+    transcript,
+    errorMessage,
+    toggleRecording,
+    confirmTranscript,
+    clearTranscript,
+    submitText,
+    toggleMode,
+    backToHome,
+    finishSave,
+  } = useRecordingFlow({ onBack, onSaved })
 
-  const isRecording = status === 'recording'
-  const isProcessing = status === 'processing'
-  // 送信ボタンの有効判定
-  const canSubmitText = inputText.trim().length > 0
-
-  // 声が大きいほど波紋が遠くまで広がる
+  // 声での波紋の広がり
   const rippleScale = 1.1 + level * 0.35
 
-  // 録音の開始と停止の切り替え
-  async function handleMicClick() {
-    if (isRecording) {
-      await stop()
-    } else {
-      await start()
-    }
-  }
-
-  // 確定したテキストを保持し、生成結果画面へ遷移する
-  function handleConfirm(text: string) {
-    setConfirmedMode('voice')
-    setConfirmedText(text)
-    clearTranscript()
-  }
-
-  // 入力中のテキストの確定
-  function handleTextSubmit() {
-    if (!canSubmitText) {
-      return
-    }
-
-    setConfirmedMode('text')
-    setConfirmedText(inputText.trim())
-  }
-
-  // 入力方法の切り替え
-  function toggleMode() {
-    setMode(mode === 'voice' ? 'text' : 'voice')
-  }
-
-  // 保存が完了したら、本棚画面へ遷移する
-  function handleSave() {
-    setConfirmedText(null)
-    setInputText('')
-    onSaved()
-  }
-
-  // 確定済みなら生成結果画面を表示
   if (confirmedText) {
-    return <StoryScreen inputText={confirmedText} inputType={confirmedMode} onSave={handleSave} />
+    return <StoryScreen inputText={confirmedText} inputType={confirmedMode} onSave={finishSave} />
   }
 
   return (
-    <main className="bg-bg flex min-h-screen w-full flex-col items-center justify-center gap-10 px-6 py-12">
+    <main className="bg-bg flex h-screen w-full flex-col items-center justify-center gap-6 px-6 py-8">
       <p className="font-disp text-txt text-xl sm:text-2xl">今日は どんな１日だった？</p>
 
       {/* 入力領域 */}
@@ -107,7 +73,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
             <button
               type="button"
               aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
-              onClick={handleMicClick}
+              onClick={toggleRecording}
               disabled={isProcessing}
               className="relative h-full w-full cursor-pointer transition-transform hover:scale-105 disabled:opacity-60"
             >
@@ -135,12 +101,12 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
         )}
       </div>
 
-      {/* 案内文と送信ボタンの領域 */}
+      {/* 案内文と送信ボタン */}
       <div className="flex h-10 flex-col items-center justify-center gap-1">
         {mode === 'voice' ? (
           <>
-            {/* 録音状態に応じた案内文 */}
-            <p className="font-body text-txt2 text-sm">
+            {/* 案内文 */}
+            <p className={`font-body text-txt2 text-sm ${isProcessing ? 'animate-text-fade' : ''}`}>
               {isProcessing
                 ? 'いま聞いているよ…'
                 : isRecording
@@ -154,9 +120,9 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
           // テキストの送信ボタン
           <button
             type="button"
-            onClick={handleTextSubmit}
+            onClick={submitText}
             disabled={!canSubmitText}
-            className="font-body bg-glow hover:bg-main disabled:hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-sm text-white [text-shadow:0_1px_2px_rgba(74,59,49,0.35)] transition-colors disabled:opacity-40"
+            className="font-body bg-glow hover:bg-main disabled:hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-sm text-white shadow-sm [text-shadow:0_1px_2px_rgba(74,59,49,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:shadow-sm"
           >
             書けたよ
           </button>
@@ -167,24 +133,25 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
       <button
         type="button"
         onClick={toggleMode}
-        className="font-body border-sub text-sub hover:bg-sub flex cursor-pointer items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
+        disabled={isProcessing}
+        className="font-body border-sub text-sub hover:bg-sub flex cursor-pointer items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
         {mode === 'voice' ? <PencilIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />}
         {mode === 'voice' ? '文字で書く' : '声で話す'}
       </button>
 
-      {/* ホーム画面への戻り */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="font-body text-txt2 hover:text-txt cursor-pointer text-sm transition-colors"
-      >
-        もどる
+      {/* ホーム画面への遷移ボタン */}
+      <button type="button" onClick={backToHome} className="back-link">
+        ← ホームにもどる
       </button>
 
       {/* 音声入力の確認モーダル */}
       {transcript && (
-        <TranscriptModal text={transcript} onConfirm={handleConfirm} onCancel={clearTranscript} />
+        <TranscriptModal
+          text={transcript}
+          onConfirm={confirmTranscript}
+          onCancel={clearTranscript}
+        />
       )}
     </main>
   )
