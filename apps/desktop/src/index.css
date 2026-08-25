@@ -53,6 +53,104 @@ body {
   animation: ripple 5s ease-out infinite;
 }
 
+/* もどるボタン */
+.back-link {
+  padding: 3px 10px;
+  color: var(--color-txt2);
+  font-family: var(--font-body);
+  font-size: 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--color-txt);
+}
+
+/* 選択候補のパネル */
+.option-menu {
+  display: grid;
+  min-width: 200px;
+  padding: 10px 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  border: 1px solid rgba(140, 119, 104, 0.22);
+  border-radius: 14px;
+  background: var(--color-bg);
+  box-shadow: 0 8px 20px rgba(74, 59, 49, 0.16);
+}
+
+/* 画面基準の候補の配置 */
+.option-menu-floating {
+  position: fixed;
+  z-index: 250;
+}
+
+/* 単一選択の候補 */
+.option-menu-item {
+  padding: 4px 12px;
+  color: var(--color-txt);
+  font-family: var(--font-body);
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.option-menu-item:hover {
+  background: rgba(232, 162, 76, 0.14);
+}
+
+.option-menu-item-active {
+  color: white;
+  background: var(--color-sub);
+}
+
+.option-menu-item-active:hover {
+  background: var(--color-sub);
+}
+
+/* 複数選択の候補 */
+.option-menu-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-txt);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.option-menu-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-sub);
+  cursor: pointer;
+}
+
+/* 本の外に出す見出し */
+.book-outer-heading {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  z-index: 20;
+  margin: 0;
+  color: var(--color-txt2);
+  font-family: var(--font-disp);
+  font-size: 18px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
 /* 物語画面のルート */
 .story-screen {
   position: relative;
@@ -327,7 +425,7 @@ body {
   animation: story-page-turning-enter 2s cubic-bezier(0.33, 0, 0.2, 1) both;
 }
 
-/* 左半分から右へ広がるスライドイン */
+/* スライドインの動き */
 @keyframes story-page-turning-enter {
   0% {
     clip-path: inset(0 0 0 50%);
@@ -516,6 +614,12 @@ body {
   transform: translate(-50%, -50%);
 }
 
+/* 詳細画面の見開きの配置枠 */
+.entry-detail-stage {
+  top: 47%;
+  height: min(calc(100vh - 210px), 660px);
+}
+
 .story-open-book {
   position: absolute;
   inset: 0;
@@ -598,7 +702,7 @@ body {
   margin: 0;
   padding: 0 0.7rem 0 4px;
   line-height: 28.2px;
-  font-size: 0.96rem;
+  font-size: 0.86rem;
 }
 
 .story-cursor {
@@ -674,7 +778,7 @@ body {
 
 .story-photo-image {
   max-width: 100%;
-  max-height: calc(100% - 44px);
+  max-height: 100%;
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 3px 10px rgba(74, 59, 49, 0.15);
@@ -683,32 +787,41 @@ body {
 /* 写真の操作ボタンの配置 */
 .story-photo-controls {
   display: flex;
-  gap: 10px;
+  justify-content: center;
+  gap: 16px;
 }
 
 .story-photo-control {
-  padding: 4px 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
   color: var(--color-txt2);
   font-family: var(--font-body);
   font-size: 12px;
-  border: 1px solid rgba(140, 119, 104, 0.3);
+  border: none;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.4);
+  background: none;
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .story-photo-control:hover {
-  color: white;
-  background: var(--color-txt2);
+  color: var(--color-main);
+  background: rgba(232, 162, 76, 0.14);
+}
+
+.story-photo-control-icon {
+  width: 15px;
+  height: 15px;
 }
 
 /* 操作ボタンの配置 */
 .story-actions {
   position: absolute;
-  bottom: 24px;
+  bottom: 26px;
   left: 50%;
   z-index: 20;
   display: flex;
@@ -717,6 +830,581 @@ body {
   gap: 12px;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+
+/* 二段の操作ボタンの配置 */
+.story-actions-stacked {
+  bottom: 40px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 編集中の操作ボタンの配置 */
+.story-actions-edit {
+  bottom: 76px;
+}
+
+.story-actions-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* 詳細画面の操作ボタン */
+.entry-detail-action {
+  min-width: 104px;
+}
+
+/* 本棚画面のルート */
+.bookshelf-screen {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 26px 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 絞り込みの配置枠 */
+.bookshelf-filter {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.bookshelf-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bookshelf-filter-label {
+  color: var(--color-txt2);
+  font-size: 13px;
+}
+
+/* 絞り込みのボタン */
+.bookshelf-select {
+  padding: 6px 30px 6px 14px;
+  color: var(--color-txt);
+  font-family: var(--font-body);
+  font-size: 13px;
+  text-align: left;
+  border: 1px solid rgba(140, 119, 104, 0.28);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.6);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%238c7768' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px;
+  cursor: pointer;
+  appearance: none;
+  transition: border-color 0.2s ease;
+}
+
+.bookshelf-select:hover {
+  border-color: var(--color-main);
+}
+
+.bookshelf-select:focus {
+  border-color: var(--color-main);
+  outline: none;
+}
+
+.bookshelf-filter-clear {
+  padding: 4px 12px;
+  color: var(--color-txt2);
+  font-family: var(--font-body);
+  font-size: 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* 選択中のきもち */
+.bookshelf-selected-emotions {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bookshelf-emotion-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  color: white;
+  font-family: var(--font-body);
+  font-size: 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-sub);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.bookshelf-emotion-tag:hover {
+  opacity: 0.75;
+}
+
+.bookshelf-emotion-remove {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.bookshelf-error {
+  margin: 0;
+  color: var(--color-rec);
+  font-size: 13px;
+}
+
+/* 棚の枠 */
+.bookshelf-frame {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  padding: 12px 0 0;
+  box-sizing: border-box;
+  border-right: 12px solid var(--color-txt2);
+  border-left: 12px solid var(--color-txt2);
+  border-radius: 5px;
+  background: #efe0d0;
+  box-shadow:
+    inset 0 8px 14px rgba(74, 59, 49, 0.14),
+    0 6px 16px rgba(74, 59, 49, 0.14);
+}
+
+/* 棚の天板 */
+.bookshelf-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -12px;
+  left: -12px;
+  height: 12px;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(to bottom, #a08a78 0%, var(--color-txt2) 60%, #6f5c4f 100%);
+}
+
+/* 棚の底板 */
+.bookshelf-frame::after {
+  content: '';
+  position: absolute;
+  right: -12px;
+  bottom: -12px;
+  left: -12px;
+  height: 12px;
+  border-radius: 0 0 5px 5px;
+  background: linear-gradient(to bottom, var(--color-txt2) 0%, #6f5c4f 100%);
+}
+
+.bookshelf-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  margin: 0;
+  color: var(--color-txt2);
+  font-size: 14px;
+  transform: translate(-50%, -50%);
+}
+
+/* 背表紙を並べる段 */
+.bookshelf-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-end;
+  gap: 9px;
+  padding: 0 16px 12px;
+  box-sizing: border-box;
+}
+
+/* 段ごとの年 */
+.bookshelf-row-year {
+  margin-right: 4px;
+  padding-bottom: 3px;
+  color: var(--color-txt2);
+  font-family: var(--font-disp);
+  font-size: 13px;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+/* 棚板 */
+.bookshelf-row::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 12px;
+  background: linear-gradient(to bottom, #a08a78 0%, var(--color-txt2) 45%, #6f5c4f 100%);
+  box-shadow: 0 4px 8px rgba(74, 59, 49, 0.16);
+}
+
+/* 最下段の棚板 */
+.bookshelf-row:last-child {
+  padding-bottom: 0;
+}
+
+.bookshelf-row:last-child::after {
+  display: none;
+}
+
+/* 月ごとの背表紙 */
+.book-spine {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 42px;
+  height: var(--spine-height, 90%);
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  box-sizing: border-box;
+  color: white;
+  font-family: var(--font-disp);
+  border: none;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(
+    to right,
+    rgba(74, 59, 49, 0.22) 0%,
+    var(--color-sub) 20%,
+    var(--color-sub) 76%,
+    rgba(74, 59, 49, 0.14) 100%
+  );
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.book-spine:hover {
+  transform: translateY(-7px);
+  filter: brightness(1.06);
+}
+
+/* 背表紙の飾り帯 */
+.book-spine-band {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* 背表紙の月 */
+.book-spine-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.book-spine-number {
+  font-size: 17px;
+}
+
+.book-spine-unit {
+  font-size: 11px;
+}
+
+/* 本棚の操作ボタンの配置 */
+.bookshelf-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+/* 日付リストのページ */
+.bookshelf-date-page {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  background-color: var(--color-bg);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    rgba(140, 119, 104, 0.14) 27px,
+    rgba(140, 119, 104, 0.14) 28px
+  );
+  background-origin: content-box;
+  background-clip: content-box;
+  background-repeat: repeat-y;
+  background-position: left top;
+  background-size: 100% 28px;
+  padding: 6% 5%;
+}
+
+.bookshelf-date-page-left {
+  width: 58%;
+  clip-path: polygon(0 1%, 99% 0, 100% 2%, 100% 98%, 99% 100%, 0 99%);
+}
+
+.bookshelf-date-page-right {
+  width: 50%;
+  margin-right: 10px;
+  clip-path: polygon(0 2%, 1% 0, 100% 1%, 100% 99%, 1% 100%, 0 98%);
+}
+
+.bookshelf-date-list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  list-style: none;
+}
+
+/* 日付1件の行 */
+.bookshelf-date-item {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  color: var(--color-txt);
+  font-family: var(--font-body);
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.bookshelf-date-item:hover {
+  background: rgba(232, 162, 76, 0.12);
+}
+
+.bookshelf-date-day {
+  color: rgba(232, 162, 76, 0.7);
+  font-family: var(--font-disp);
+  font-size: 12px;
+  min-width: 3em;
+}
+
+.bookshelf-date-excerpt {
+  overflow: hidden;
+  color: var(--color-txt2);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ページの重なり */
+.bookshelf-page-hint {
+  position: absolute;
+  top: 4%;
+  right: -4px;
+  bottom: 4%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-bg2);
+  box-shadow:
+    4px 0 0 rgba(246, 230, 216, 0.9),
+    8px 0 0 rgba(246, 230, 216, 0.7),
+    12px 0 0 rgba(246, 230, 216, 0.5);
+}
+
+/* 詳細画面の編集欄 */
+.entry-detail-text {
+  width: 100%;
+  height: 100%;
+  padding: 0 0.7rem 0 4px;
+  box-sizing: border-box;
+  color: var(--color-txt);
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  line-height: 28.2px;
+  border: none;
+  background: transparent;
+  resize: none;
+  scrollbar-width: none;
+}
+
+.entry-detail-text::-webkit-scrollbar {
+  display: none;
+}
+
+.entry-detail-text:focus {
+  outline: none;
+}
+
+/* 詳細画面の右ページ */
+.entry-detail-right {
+  display: flex;
+  padding: 5% 4%;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 詳細画面の写真枠 */
+.entry-detail-photo {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 閲覧中の写真枠 */
+.entry-detail-photo-static {
+  cursor: default;
+}
+
+.entry-detail-photo-static:hover {
+  border-color: rgba(140, 119, 104, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* タグの表示 */
+.entry-detail-tag-marks {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.entry-detail-tag-mark {
+  padding: 2px 10px;
+  color: var(--color-txt2);
+  font-size: 11px;
+  border: 1px solid rgba(185, 140, 166, 0.5);
+  border-radius: 999px;
+  background: rgba(185, 140, 166, 0.12);
+}
+
+/* 編集中のタグ */
+.entry-detail-tag-selects {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.entry-detail-select {
+  min-width: 96px;
+  padding: 5px 28px 5px 12px;
+  font-size: 12px;
+}
+
+/* 確認モーダルの背面 */
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74, 59, 49, 0.35);
+  animation: confirm-modal-fade 0.2s ease both;
+}
+
+@keyframes confirm-modal-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.confirm-modal {
+  display: flex;
+  width: min(88vw, 380px);
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 30px 28px 24px;
+  box-sizing: border-box;
+  border-radius: 22px;
+  background: var(--color-bg);
+  box-shadow: 0 12px 32px rgba(74, 59, 49, 0.22);
+  animation: confirm-modal-rise 0.25s ease both;
+}
+
+@keyframes confirm-modal-rise {
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirm-modal-title {
+  margin: 0;
+  color: var(--color-txt);
+  font-family: var(--font-disp);
+  font-size: 17px;
+}
+
+.confirm-modal-message {
+  margin: 0;
+  color: var(--color-txt2);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  margin-top: 8px;
+  gap: 12px;
+}
+
+.confirm-modal-cancel {
+  padding: 8px 24px;
+  color: var(--color-txt2);
+  font-family: var(--font-body);
+  font-size: 14px;
+  border: 2px solid var(--color-txt2);
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.confirm-modal-cancel:hover {
+  color: white;
+  background: var(--color-txt2);
+}
+
+.confirm-modal-confirm {
+  padding: 8px 28px;
+  color: white;
+  font-family: var(--font-body);
+  font-size: 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-rec);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.confirm-modal-confirm:hover {
+  background: var(--color-rec2);
 }
 
 /* 高さ800px以下、幅769px以上の画面 */
@@ -731,6 +1419,10 @@ body {
 
   .story-open-stage {
     height: min(calc(100vh - 70px), 700px);
+  }
+
+  .entry-detail-stage {
+    height: min(calc(100vh - 200px), 590px);
   }
 }
 
@@ -749,6 +1441,10 @@ body {
   .story-open-stage {
     width: 97vw;
     height: min(calc(100vh - 90px), 650px);
+  }
+
+  .entry-detail-stage {
+    height: min(calc(100vh - 200px), 560px);
   }
 
   .story-left-page,
@@ -782,6 +1478,15 @@ body {
     height: min(calc(100vh - 110px), 520px);
   }
 
+  .entry-detail-stage {
+    height: min(calc(100vh - 210px), 440px);
+  }
+
+  .book-outer-heading {
+    top: 44px;
+    font-size: 15px;
+  }
+
   .story-book-content {
     inset: 14% 6%;
   }
@@ -791,16 +1496,58 @@ body {
     padding: 8% 6%;
   }
 
-  .story-text {
-    font-size: 13px;
-  }
-
   .story-text p {
+    font-size: 0.78rem;
     line-height: 24px;
   }
 
   .story-left-page {
     background-size: 100% 24px;
+  }
+
+  .bookshelf-row {
+    gap: 7px;
+    padding: 0 10px 10px;
+  }
+
+  .bookshelf-row-year {
+    font-size: 12px;
+  }
+
+  .book-spine {
+    width: 34px;
+    padding: 7px 0;
+  }
+
+  .book-spine-number {
+    font-size: 15px;
+  }
+
+  .book-spine-unit {
+    font-size: 10px;
+  }
+
+  .bookshelf-date-page {
+    background-size: 100% 24px;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 23px,
+      rgba(140, 119, 104, 0.14) 23px,
+      rgba(140, 119, 104, 0.14) 24px
+    );
+  }
+
+  .bookshelf-date-item {
+    height: 24px;
+  }
+
+  .bookshelf-date-day {
+    font-size: 11px;
+  }
+
+  .bookshelf-date-excerpt {
+    font-size: 11px;
   }
 }
 
@@ -821,6 +1568,10 @@ body {
     height: min(calc(100vh - 105px), 430px);
   }
 
+  .entry-detail-stage {
+    height: min(calc(100vh - 205px), 370px);
+  }
+
   .story-book-content {
     inset: 14% 6%;
   }
@@ -830,11 +1581,8 @@ body {
     padding: 8% 5%;
   }
 
-  .story-text {
-    font-size: 11px;
-  }
-
   .story-text p {
+    font-size: 0.7rem;
     line-height: 20px;
   }
 
@@ -848,7 +1596,6 @@ body {
   }
 
   .story-photo-control {
-    padding: 3px 12px;
     font-size: 11px;
   }
 
@@ -856,6 +1603,28 @@ body {
     padding-right: 16px;
     padding-left: 16px;
     font-size: 12px;
+  }
+
+  .bookshelf-row {
+    gap: 5px;
+    padding: 0 8px 9px;
+  }
+
+  .bookshelf-row-year {
+    font-size: 11px;
+  }
+
+  .book-spine {
+    width: 27px;
+    padding: 6px 0;
+  }
+
+  .book-spine-number {
+    font-size: 13px;
+  }
+
+  .book-spine-unit {
+    font-size: 9px;
   }
 }
 
@@ -866,7 +1635,9 @@ body {
   .turning-page,
   .story-page-turning,
   .generation-dot,
-  .story-cursor {
+  .story-cursor,
+  .confirm-modal-overlay,
+  .confirm-modal {
     transition: none;
     animation: none;
   }

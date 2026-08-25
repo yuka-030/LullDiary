@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import AudioPlayButton from '../components/AudioPlayButton'
 import BookCover from '../components/BookCover'
 import PageTurningBook from '../components/PageTurningBook'
+import { SwapIcon, TrashIcon } from '../components/PhotoControlIcons'
 import { createEntry } from '../lib/entryClient'
 import { useAudioNarration } from '../lib/useAudioNarration'
 import { useStory, type InputType } from '../lib/useStory'
@@ -332,9 +333,11 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
                         onClick={() => photoInputRef.current?.click()}
                         className="story-photo-control"
                       >
-                        変える
+                        <SwapIcon className="story-photo-control-icon" />
+                        変更
                       </button>
                       <button type="button" onClick={clearPhoto} className="story-photo-control">
+                        <TrashIcon className="story-photo-control-icon" />
                         削除
                       </button>
                     </div>

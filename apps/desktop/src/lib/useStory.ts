@@ -66,7 +66,7 @@ export function useStory(deps: StoryDeps = defaultDeps) {
       try {
         const narration = await depsRef.current.requestNarration(text)
 
-        // 新しい生成が始まっている場合は結果を破棄
+        // 古い生成結果の判定
         if (narrationId !== narrationIdRef.current) {
           return
         }
@@ -96,7 +96,7 @@ export function useStory(deps: StoryDeps = defaultDeps) {
     async (input: string) => {
       const generationId = ++generationIdRef.current
 
-      // 進行中の読み上げ音声生成の結果を破棄
+      // 進行中の読み上げ音声生成の無効化
       narrationIdRef.current++
 
       setStatus('generating')
@@ -109,13 +109,14 @@ export function useStory(deps: StoryDeps = defaultDeps) {
       try {
         const story = await depsRef.current.requestStory(input)
 
+        // 古い生成結果の判定
         if (generationId !== generationIdRef.current) {
           return
         }
 
         setStoryText(story)
 
-        // 読み上げ音声の生成は物語・タグの状態から切り離して実行
+        // 読み上げ音声の生成
         void startNarration(story)
 
         const extractedTags = await depsRef.current.requestTags(story)

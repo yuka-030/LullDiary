@@ -1,5 +1,5 @@
 // apps/server/src/media/paths.ts
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 
 // app_dataのルート
@@ -24,4 +24,15 @@ export function photoPath(id: string, filename: string): string {
 export function ensureMediaDirs(id: string): void {
   mkdirSync(path.join(APP_DATA_DIR, 'narration'), { recursive: true })
   mkdirSync(photosDir(id), { recursive: true })
+}
+
+// 保存済みメディアの削除
+export function removeMedia(id: string): void {
+  rmSync(narrationPath(id), { force: true })
+  rmSync(photosDir(id), { recursive: true, force: true })
+}
+
+// 保存済み写真の削除
+export function removePhotos(id: string): void {
+  rmSync(photosDir(id), { recursive: true, force: true })
 }

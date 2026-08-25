@@ -7,9 +7,11 @@ import StoryScreen from './StoryScreen'
 type Props = {
   // ホーム画面への遷移
   onBack: () => void
+  // 保存が完了した後の処理
+  onSaved: () => void
 }
 
-export default function RecordingScreen({ onBack }: Props) {
+export default function RecordingScreen({ onBack, onSaved }: Props) {
   // 入力方法
   const [mode, setMode] = useState<'voice' | 'text'>('voice')
   // テキスト入力欄の内容
@@ -59,10 +61,11 @@ export default function RecordingScreen({ onBack }: Props) {
     setMode(mode === 'voice' ? 'text' : 'voice')
   }
 
-  // 保存が完了したら、記録画面の初期状態に戻す
+  // 保存が完了したら、本棚画面へ遷移する
   function handleSave() {
     setConfirmedText(null)
     setInputText('')
+    onSaved()
   }
 
   // 確定済みなら生成結果画面を表示
