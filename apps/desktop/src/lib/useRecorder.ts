@@ -1,6 +1,6 @@
 // apps/desktop/src/lib/useRecorder.ts
 import { invoke } from '@tauri-apps/api/core'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { requestTranscription } from './sttClient'
 import { encodeWav } from './wavEncoder'
 
@@ -34,6 +34,38 @@ export function useRecorder() {
   const chunksRef = useRef<Float32Array[]>([])
   // 録音中の音量の履歴
   const levelsRef = useRef<number[]>([])
+
+  // 録音に使ったリソースの解放
+  const releaseRecording = useCallback(async () => {
+    const processor = processorRef.current
+    const source = sourceRef.current
+    const stream = streamRef.current
+    const audioContext = audioContextRef.current
+
+    if (processor) {
+      processor.onaudioprocess = null
+      processor.disconnect()
+      processorRef.current = null
+    }
+
+    if (source) {
+      source.disconnect()
+      sourceRef.current = null
+    }
+
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
+    }
+
+    if (audioContext) {
+      audioContextRef.current = null
+
+      if (audioContext.state !== 'closed') {
+        await audioContext.close().catch(() => {})
+      }
+    }
+  }, [])
 
   const start = useCallback(async () => {
     setErrorMessage(null)
@@ -79,27 +111,21 @@ export function useRecorder() {
 
       setStatus('recording')
     } catch (err) {
+      await releaseRecording()
       setErrorMessage(err instanceof Error ? err.message : 'マイクにアクセスできませんでした')
       setStatus('error')
     }
-  }, [])
+  }, [releaseRecording])
 
   const stop = useCallback(async () => {
     const audioContext = audioContextRef.current
-    const stream = streamRef.current
-    const processor = processorRef.current
-    const source = sourceRef.current
 
-    if (!audioContext || !stream || !processor || !source) {
+    if (!audioContext || !streamRef.current || !processorRef.current || !sourceRef.current) {
       return
     }
 
     setStatus('processing')
     setLevel(0)
-
-    processor.disconnect()
-    source.disconnect()
-    stream.getTracks().forEach((track) => track.stop())
 
     const sampleRate = audioContext.sampleRate
 
@@ -112,7 +138,7 @@ export function useRecorder() {
       offset += chunk.length
     }
 
-    await audioContext.close()
+    await releaseRecording()
 
     try {
       // 音声前処理
@@ -130,17 +156,40 @@ export function useRecorder() {
       setErrorMessage(err instanceof Error ? err.message : String(err))
       setStatus('error')
     }
-  }, [])
+  }, [releaseRecording])
+
+  // 録音の中止
+  const cancel = useCallback(async () => {
+    if (streamRef.current === null) {
+      return
+    }
+
+    await releaseRecording()
+
+    chunksRef.current = []
+    levelsRef.current = []
+
+    setLevel(0)
+    setStatus('idle')
+  }, [releaseRecording])
 
   // 認識結果の破棄
   const clearTranscript = useCallback(() => {
     setTranscript(null)
   }, [])
 
+  // アンマウント時のリソースの解放
+  useEffect(() => {
+    return () => {
+      void releaseRecording()
+    }
+  }, [releaseRecording])
+
   return {
     status,
     start,
     stop,
+    cancel,
     transcript,
     voiceProfile,
     clearTranscript,
