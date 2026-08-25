@@ -7,9 +7,16 @@ type Props = {
   pageProgress: number
   // 左ページの罫線を表示するかどうか
   showLeftLines?: boolean
+  // 右ページの罫線を表示するかどうか
+  showRightLines?: boolean
 }
 
-export default function PageTurningBook({ className, pageProgress, showLeftLines = true }: Props) {
+export default function PageTurningBook({
+  className,
+  pageProgress,
+  showLeftLines = true,
+  showRightLines = true,
+}: Props) {
   const progress = Math.max(0, Math.min(pageProgress, 1))
 
   return (
@@ -23,7 +30,7 @@ export default function PageTurningBook({ className, pageProgress, showLeftLines
 
       <div className="page-turning-surface">
         <PageSheet side="left" showLines={showLeftLines} />
-        <PageSheet side="right" />
+        <PageSheet side="right" showLines={showRightLines} />
 
         <div
           className="turning-page"
@@ -31,7 +38,7 @@ export default function PageTurningBook({ className, pageProgress, showLeftLines
             transform: `rotateY(${-180 * progress}deg)`,
           }}
         >
-          <PageSheet side="right" />
+          <PageSheet side="right" showLines={showRightLines} />
 
           <div className="turning-page-back">
             <PageSheet side="left" showLines={showLeftLines} />

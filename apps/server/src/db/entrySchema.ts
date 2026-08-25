@@ -16,6 +16,12 @@ export const CreateEntryFieldsSchema = z.object({
   tags: TagsSchema,
 })
 
+// PATCH /entries/:id のテキストフィールド
+export const UpdateEntryFieldsSchema = z.object({
+  story_text: z.string().min(1).optional(),
+  tags: TagsSchema.optional(),
+})
+
 // GET /entries のクエリパラメータ
 export const ListEntriesQuerySchema = z.object({
   scene: z.enum(TAG_OPTIONS.シーン).optional(),

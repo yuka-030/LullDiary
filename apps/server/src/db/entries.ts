@@ -12,6 +12,12 @@ export type CreateEntryInput = {
   photo_paths?: string[]
 }
 
+// 更新時に受け取る値
+export type UpdateEntryInput = {
+  story_text?: string
+  tags?: Tags
+}
+
 // 一覧の絞り込み条件
 export type ListEntriesFilter = {
   scene?: string
@@ -50,6 +56,32 @@ export function createEntry(input: CreateEntryInput): Entry {
     tags: input.tags,
     photo_paths: input.photo_paths ?? [],
   }
+}
+
+// 物語文とタグの更新
+export function updateEntry(id: string, input: UpdateEntryInput): boolean {
+  const assignments: string[] = []
+  const params: string[] = []
+
+  if (input.story_text !== undefined) {
+    assignments.push('story_text = ?')
+    params.push(input.story_text)
+  }
+
+  if (input.tags !== undefined) {
+    assignments.push('tags = ?')
+    params.push(JSON.stringify(input.tags))
+  }
+
+  if (assignments.length === 0) {
+    return false
+  }
+
+  const result = db
+    .prepare(`UPDATE entries SET ${assignments.join(', ')} WHERE id = ?;`)
+    .run(...params, id)
+
+  return result.changes > 0
 }
 
 // メディアパスの更新
