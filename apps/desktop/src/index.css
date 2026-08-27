@@ -74,9 +74,8 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--color-rec2);
-  opacity: 1;
-  transition: opacity 1.5s ease-out;
+  background: var(--color-glow);
+  transition: opacity 1s linear;
 }
 
 /* 経過した分のドット */

@@ -206,13 +206,13 @@ describe('useRecordingFlow', () => {
 
     expect(result.current.remainingDots).toBe(6)
 
-    // 30秒の経過
-    await advanceSeconds(30)
+    // 1つ目が消えるまでの10秒の経過
+    await advanceSeconds(10)
 
     expect(result.current.remainingDots).toBe(5)
 
-    // さらに30秒の経過
-    await advanceSeconds(30)
+    // 2つ目が消えるまでの34秒の経過
+    await advanceSeconds(34)
 
     expect(result.current.remainingDots).toBe(4)
   })
