@@ -1,6 +1,6 @@
 // apps/desktop/src/screens/RecordingScreen.tsx
 import TranscriptModal from '../components/TranscriptModal'
-import { useRecordingFlow } from '../lib/useRecordingFlow'
+import { RECORDING_DOT_COUNT, useRecordingFlow } from '../lib/useRecordingFlow'
 import StoryScreen from './StoryScreen'
 
 type Props = {
@@ -18,12 +18,17 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
     confirmedText,
     confirmedMode,
     isRecording,
+    isRecorded,
     isProcessing,
     canSubmitText,
     level,
+    remainingDots,
+    fadingDotOpacity,
     transcript,
     errorMessage,
     toggleRecording,
+    retryRecording,
+    transcribe,
     confirmTranscript,
     clearTranscript,
     submitText,
@@ -74,7 +79,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
               type="button"
               aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
               onClick={toggleRecording}
-              disabled={isProcessing}
+              disabled={isProcessing || isRecorded}
               className="relative h-full w-full cursor-pointer transition-transform hover:scale-105 disabled:opacity-60"
             >
               <HeartShape
@@ -101,21 +106,65 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
         )}
       </div>
 
-      {/* 案内文と送信ボタン */}
+      {/* 残り時間のドット */}
+      <div className="flex h-2 items-center justify-center gap-2">
+        {isRecording &&
+          Array.from({ length: RECORDING_DOT_COUNT }, (_, index) => {
+            const isFading = index === remainingDots - 1
+            const isSpent = index >= remainingDots
+
+            return (
+              <span
+                key={index}
+                className="recording-dot"
+                style={{ opacity: isSpent ? 0 : isFading ? fadingDotOpacity : 1 }}
+              />
+            )
+          })}
+      </div>
+
+      {/* 案内文と操作ボタン */}
       <div className="flex h-10 flex-col items-center justify-center gap-1">
         {mode === 'voice' ? (
-          <>
-            {/* 案内文 */}
-            <p className={`font-body text-txt2 text-sm ${isProcessing ? 'animate-text-fade' : ''}`}>
-              {isProcessing
-                ? 'いま聞いているよ…'
-                : isRecording
-                  ? 'タップで録音終わるよ'
-                  : 'タップして話しかけてね'}
-            </p>
+          isRecorded ? (
+            // 録音後の操作ボタン
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={retryRecording}
+                className="font-body border-sub text-sub hover:bg-sub cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white"
+              >
+                録り直す
+              </button>
 
-            {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
-          </>
+              <button
+                type="button"
+                onClick={transcribe}
+                className="font-body bg-glow hover:bg-main cursor-pointer rounded-full px-8 py-2 text-sm text-white shadow-sm [text-shadow:0_1px_2px_rgba(74,59,49,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
+                作成する
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* 案内文 */}
+              <p
+                className={`font-body text-txt2 text-center text-sm ${isProcessing ? 'animate-text-fade' : ''}`}
+              >
+                {isProcessing
+                  ? 'いま聞いているよ…'
+                  : isRecording
+                    ? 'タップで録音終わるよ'
+                    : 'タップして話しかけてね'}
+              </p>
+
+              {!isProcessing && !isRecording && (
+                <p className="font-body text-txt2 mt-1 text-xs">録音時間は3分です</p>
+              )}
+
+              {errorMessage && <p className="font-body text-sub text-sm">{errorMessage}</p>}
+            </>
+          )
         ) : (
           // テキストの送信ボタン
           <button

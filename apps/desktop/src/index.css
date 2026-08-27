@@ -68,6 +68,21 @@ body {
   animation: text-fade 5s ease-in-out infinite;
 }
 
+/* 残り時間のドット */
+.recording-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-glow);
+  transition: opacity 1s linear;
+}
+
+/* 経過した分のドット */
+.recording-dot-spent {
+  opacity: 0;
+}
+
 /* もどるボタン */
 .back-link {
   padding: 3px 10px;
@@ -1651,6 +1666,7 @@ body {
   .story-page-turning,
   .generation-dot,
   .story-cursor,
+  .recording-dot,
   .confirm-modal-overlay,
   .confirm-modal {
     transition: none;
