@@ -97,7 +97,7 @@ ${formatHints(SCENE_HINTS)}
 ${formatHints(EMOTION_HINTS)}
 
 【出力形式】
-{"シーン": "", "感情": []}
+{"シーン": "家", "感情": ["穏やか"]}
 
 【文章】
 ${input}`

@@ -13,7 +13,7 @@ export class OllamaError extends Error {
 }
 
 // 物語生成のプロンプト
-function buildPrompt(input: string): string {
+function buildStoryPrompt(input: string): string {
   return `次の文章を、読み聞かせのような語り口に書き直してください。
 
 例を二つ見せます。
@@ -24,18 +24,18 @@ function buildPrompt(input: string): string {
 書き直した文章:
 今日は、お友だちと公園へ出かけた日でした。
 ブランコに座って、二人で並んで揺れました。
-そんな途中で、転んでしまいました。膝を、すりむいてしまったのです。
-じんじんと痛みました。痛かったですね。
+そんな途中で、転んでしまいました。膝を、すりむいてしまいました。
+じんじんと痛みました。
 それでも、楽しい一日でした。
 
 元の文章:
-今日は一日中、部屋の片づけをした。思ったより物が多くて、途中で嫌になった。結局終わらなかった。
+今日は一日中、部屋の片づけをした。思ったより物が多くて、途中で嫌になった。またそのうちやろうと思う。
 
 書き直した文章:
 今日は、部屋の片づけをした一日でした。
 引き出しを開けると、しまい込んでいたものが次々に出てきます。思っていたよりも、ずっとたくさんありました。
 途中で、嫌になってしまいました。
-結局、片づけは終わらないまま、一日が過ぎていきました。
+またそのうちやろうと思いました。
 
 同じように書き直してください。書き直した文章だけを出力してください。
 
@@ -46,17 +46,23 @@ ${input}
 `
 }
 
-// 入力テキストから物語文を生成する
-export async function generateStory(input: string): Promise<string> {
+// 添削のプロンプト
+function buildPolishPrompt(story: string): string {
+  return `次の文章を、ルールに沿って直してください。直した文章だけを出力してください。
+
+文章:
+${story}
+
+直した文章:
+`
+}
+
+// Ollamaへの生成要求
+async function generate(model: string, prompt: string): Promise<string> {
   const url = process.env.OLLAMA_URL
-  const model = process.env.OLLAMA_MODEL
 
   if (!url) {
     throw new OllamaError('OLLAMA_URL が設定されていません')
-  }
-
-  if (!model) {
-    throw new OllamaError('OLLAMA_MODEL が設定されていません')
   }
 
   const response = await fetch(`${url}/api/generate`, {
@@ -64,7 +70,7 @@ export async function generateStory(input: string): Promise<string> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
-      prompt: buildPrompt(input),
+      prompt,
       stream: false,
     }),
   }).catch(() => {
@@ -82,4 +88,22 @@ export async function generateStory(input: string): Promise<string> {
   }
 
   return body.response.trim()
+}
+
+// 入力テキストから物語文を生成し、ルールに沿って整える
+export async function generateStory(input: string): Promise<string> {
+  const storyModel = process.env.OLLAMA_MODEL
+  const polishModel = process.env.OLLAMA_POLISH_MODEL
+
+  if (!storyModel) {
+    throw new OllamaError('OLLAMA_MODEL が設定されていません')
+  }
+
+  if (!polishModel) {
+    throw new OllamaError('OLLAMA_POLISH_MODEL が設定されていません')
+  }
+
+  const story = await generate(storyModel, buildStoryPrompt(input))
+
+  return generate(polishModel, buildPolishPrompt(story))
 }
