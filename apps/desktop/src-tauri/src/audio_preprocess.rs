@@ -2,26 +2,25 @@
 
 use std::os::raw::c_int;
 
-/// whisper.cpp が前提とするサンプリングレート。フレームサイズの算出に用いる。
+/// サンプリングレート
 const SAMPLE_RATE: usize = 16_000;
 
-/// VADのフレームサイズ。16kHz で 20ms 相当。
+/// VADのフレームサイズ
 const VAD_FRAME_SIZE: usize = SAMPLE_RATE / 50;
 
-/// 無音とみなす振幅の閾値。
-const SILENCE_THRESHOLD: f32 = 0.02;
+/// 無音とみなす振幅の閾値
+const SILENCE_THRESHOLD: f32 = 0.01;
 
-/// 正規化後に目標とする音量(RMS)。
+/// 正規化後の目標音量
 const TARGET_RMS: f32 = 0.1;
 
-/// 増幅率の上限。極端に小さい音声でノイズだけが増幅されるのを防ぐ。
+/// 増幅率の上限
 const MAX_GAIN: f32 = 10.0;
 
-/*
- * 自作Cライブラリの関数宣言。
- * C側の audio_preprocess.h と型・引数の順序を一致させる必要がある。
- * float -> f32、size_t -> usize、int -> c_int が対応する。
- */
+/// トリミング時に前後へ残す長さ
+const TRIM_MARGIN: usize = SAMPLE_RATE / 10;
+
+// Cライブラリの関数宣言
 unsafe extern "C" {
     fn trim_silence(
         samples: *const f32,
@@ -48,23 +47,18 @@ unsafe extern "C" {
     ) -> c_int;
 }
 
-/// 前処理に失敗した理由。
+/// 前処理の失敗理由
 #[derive(Debug, PartialEq)]
 pub enum PreprocessError {
-    /// 発話が検出できなかった(無音のみの録音など)
+    /// 発話の未検出
     NoVoiceDetected,
 }
 
-/// 前後の無音区間を除いた、有音区間の範囲を返す。
-/// 全区間が無音だった場合、または返された範囲が不正だった場合は None を返す。
+/// 前後の無音を除いた有音区間の範囲
 pub fn find_voiced_range(samples: &[f32], threshold: f32) -> Option<(usize, usize)> {
     let mut start: usize = 0;
     let mut length: usize = 0;
 
-    /*
-     * C側はメモリを確保せず、Rustが用意した領域に結果を書き込むだけなので、
-     * 解放処理は不要。samples の寿命もこの関数の呼び出し中に限られる。
-     */
     let found = unsafe {
         trim_silence(
             samples.as_ptr(),
@@ -79,10 +73,7 @@ pub fn find_voiced_range(samples: &[f32], threshold: f32) -> Option<(usize, usiz
         return None;
     }
 
-    /*
-     * C側の実装を信頼せず、返された範囲が配列に収まっているか確認する。
-     * 範囲外の値をそのまま使うと、後段のスライス操作でパニックするため。
-     */
+    // 返された範囲の検証
     if start.checked_add(length)? > samples.len() {
         return None;
     }
@@ -90,7 +81,7 @@ pub fn find_voiced_range(samples: &[f32], threshold: f32) -> Option<(usize, usiz
     Some((start, length))
 }
 
-/// 発話区間を検出する。無音のみだった場合は None を返す。
+/// 発話区間の範囲
 pub fn find_speech_range(samples: &[f32], frame_size: usize, threshold: f32) -> Option<(usize, usize)> {
     let mut start: usize = 0;
     let mut length: usize = 0;
@@ -117,7 +108,7 @@ pub fn find_speech_range(samples: &[f32], frame_size: usize, threshold: f32) -> 
     Some((start, length))
 }
 
-/// 音量を正規化する。サンプル列を直接書き換える。
+/// 音量の正規化
 pub fn apply_volume_normalize(samples: &mut [f32], target_rms: f32, max_gain: f32) -> bool {
     let applied = unsafe {
         normalize_volume(samples.as_mut_ptr(), samples.len(), target_rms, max_gain)
@@ -126,13 +117,15 @@ pub fn apply_volume_normalize(samples: &mut [f32], target_rms: f32, max_gain: f3
     applied == 1
 }
 
-/**
- * 録音データに前処理を適用し、whisper.cpp に渡せる状態のサンプル列を返す。
- *
- * 音量を揃えてから発話の有無を確認し、最後に前後の無音を除く順で処理する。
- * 音量が揃っていない状態で判定すると、小さい声の録音が無音と誤判定されるため、
- * 正規化を先に行っている。
- */
+/// 前後にマージンを足した範囲
+pub fn expand_range(start: usize, length: usize, margin: usize, total: usize) -> (usize, usize) {
+    let expanded_start = start.saturating_sub(margin);
+    let expanded_end = (start + length + margin).min(total);
+
+    (expanded_start, expanded_end - expanded_start)
+}
+
+/// 録音データの前処理
 pub fn preprocess(samples: &[f32]) -> Result<Vec<f32>, PreprocessError> {
     let mut buffer = samples.to_vec();
 
@@ -143,7 +136,11 @@ pub fn preprocess(samples: &[f32]) -> Result<Vec<f32>, PreprocessError> {
     }
 
     match find_voiced_range(&buffer, SILENCE_THRESHOLD) {
-        Some((start, length)) => Ok(buffer[start..start + length].to_vec()),
+        Some((start, length)) => {
+            let (start, length) = expand_range(start, length, TRIM_MARGIN, buffer.len());
+
+            Ok(buffer[start..start + length].to_vec())
+        }
         None => Err(PreprocessError::NoVoiceDetected),
     }
 }
@@ -152,7 +149,7 @@ pub fn preprocess(samples: &[f32]) -> Result<Vec<f32>, PreprocessError> {
 mod tests {
     use super::*;
 
-    /// 前後が無音、中央が有音のサンプル列を作る
+    /// 前後が無音、中央が有音のサンプル列
     fn build_samples(total: usize, voiced_start: usize, voiced_end: usize, amplitude: f32) -> Vec<f32> {
         (0..total)
             .map(|i| {
@@ -195,7 +192,6 @@ mod tests {
 
         let (start, length) = find_voiced_range(&samples, 0.02).expect("有音区間が検出されるはず");
 
-        // 範囲外の値が返っていれば、このスライス操作でパニックする
         let voiced = &samples[start..start + length];
 
         assert_eq!(voiced.len(), length);
@@ -213,7 +209,6 @@ mod tests {
 
     #[test]
     fn 発話区間が検出される() {
-        // フレーム1〜3が発話、それ以外は無音
         let samples = build_samples(1600, 320, 1280, 0.5);
 
         let result = find_speech_range(&samples, 320, 0.02);
@@ -236,12 +231,27 @@ mod tests {
     }
 
     #[test]
+    fn マージンの分だけ範囲が広がる() {
+        let (start, length) = expand_range(1000, 2000, 160, 5000);
+
+        assert_eq!(start, 840);
+        assert_eq!(length, 2320);
+    }
+
+    #[test]
+    fn マージンが配列の外に出ない() {
+        let (start, length) = expand_range(50, 100, 160, 200);
+
+        assert_eq!(start, 0);
+        assert_eq!(length, 200);
+    }
+
+    #[test]
     fn 前処理で無音がカットされる() {
         let samples = build_samples(16000, 4000, 12000, 0.3);
 
         let result = preprocess(&samples).expect("発話が検出されるはず");
 
-        // 前後の無音が除かれているため、元より短くなる
         assert!(result.len() < samples.len());
         assert!(result.len() >= 8000);
     }

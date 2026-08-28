@@ -16,6 +16,12 @@ const MODEL_FILE = path.join('models', 'ggml-small.bin')
 // 句読点付きの出力を促すためのヒント
 const INITIAL_PROMPT = '今日は、天気が良くて、公園に行きました。楽しかったです。'
 
+// 探索する候補の数
+const BEAM_SIZE = '5'
+
+// 生成する候補の数
+const BEST_OF = '5'
+
 export class WhisperError extends Error {
   constructor(message: string) {
     super(message)
@@ -42,6 +48,10 @@ export async function transcribe(audio: ArrayBuffer): Promise<string> {
         'ja',
         '--prompt',
         INITIAL_PROMPT,
+        '--beam-size',
+        BEAM_SIZE,
+        '--best-of',
+        BEST_OF,
         '--no-timestamps',
         '--no-prints',
       ],
