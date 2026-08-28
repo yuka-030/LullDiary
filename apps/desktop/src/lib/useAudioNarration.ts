@@ -18,12 +18,15 @@ type Options = {
 // 読み上げ音声がない場合の1文字あたりの表示間隔
 const FALLBACK_CHAR_INTERVAL_MS = 80
 
+// タイミング未指定時の既定値
+const EMPTY_TIMINGS: NarrationTiming[] = []
+
 export function useAudioNarration({
   audioUrl,
   storyText,
   isActive,
   audioRef,
-  timings = [],
+  timings = EMPTY_TIMINGS,
 }: Options) {
   const [displayedLength, setDisplayedLength] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
