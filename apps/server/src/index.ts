@@ -1,9 +1,6 @@
 // apps/server/src/index.ts
-
 import { Hono } from 'hono'
-
 import { cors } from 'hono/cors'
-
 import {
   createEntry,
   deleteEntry,
@@ -12,31 +9,21 @@ import {
   updateEntry,
   updateEntryMediaPaths,
 } from './db/entries'
-
 import {
   CreateEntryFieldsSchema,
   ListEntriesQuerySchema,
   UpdateEntryFieldsSchema,
 } from './db/entrySchema'
-
 import { migrate } from './db/migrate'
-
 import { narrationPath, photoPath, removeMedia, removePhotos } from './media/paths'
-
 import { saveNarration, savePhotos } from './media/save'
-
 import { generateStory, OllamaError } from './story/ollama'
-
 import { transcribe, WhisperError } from './stt/whisper'
-
 import { extractTags, TagExtractionError } from './tag/ollama'
-
 import type { VoiceProfile } from './tag/voice'
-
 import { synthesize, VoicevoxError } from './tts/voicevox'
 
 // VOICEVOXのローカルAPI
-
 const VOICEVOX_URL = process.env.VOICEVOX_URL
 
 if (!VOICEVOX_URL) {
@@ -44,36 +31,30 @@ if (!VOICEVOX_URL) {
 }
 
 // 暁記ミタマ ノーマル
-
 const SPEAKER_ID = 122
 
 // 物語生成リクエスト
-
 type GenerateStoryRequest = {
   text?: unknown
 }
 
 // タグ抽出リクエスト
-
 type ExtractTagsRequest = {
   text?: unknown
   voice?: unknown
 }
 
 // 音声合成リクエスト
-
 type TtsRequest = {
   text?: unknown
 }
 
 // 音声タイミング取得リクエスト
-
 type TtsTimingsRequest = {
   text?: unknown
 }
 
 // 文字ごとの発話タイミング
-
 type NarrationTiming = {
   index: number
   start: number
@@ -81,7 +62,6 @@ type NarrationTiming = {
 }
 
 // VOICEVOXのモーラ情報
-
 type TimingMora = {
   text: string
   consonant: string | null
@@ -91,14 +71,12 @@ type TimingMora = {
 }
 
 // VOICEVOXのアクセント句情報
-
 type TimingAccentPhrase = {
   moras: TimingMora[]
   pause_mora: TimingMora | null
 }
 
 // VOICEVOXの音声クエリ情報
-
 type TimingAudioQuery = {
   accent_phrases: TimingAccentPhrase[]
   pre_phoneme_length?: number
@@ -106,47 +84,36 @@ type TimingAudioQuery = {
 }
 
 // 読み上げ速度
-
 const TIMING_SPEED_SCALE = 0.74
 
 // ポーズ時間の補正倍率
-
 const TIMING_PAUSE_LENGTH_SCALE = 1.1
 
 // 音声開始前の時間
-
 const TIMING_PRE_PHONEME_LENGTH = 0.2
 
 // 長音の母音長補正倍率
-
 const LONG_VOWEL_LENGTH_SCALE = 1.3
 
 // 短縮対象の母音
-
 const NOISY_VOWELS = ['a', 'u']
 
 // 短縮対象の母音長補正倍率
-
 const NOISY_VOWEL_LENGTH_SCALE = 0.75
 
 // 短縮対象の母音長上限
-
 const NOISY_VOWEL_LENGTH_LIMIT = 0.1
 
 // 写真ファイル名
-
 const PHOTO_FILENAME_PATTERN = /^photo\d+\.jpg$/
 
 // データベースを初期化する
-
 migrate()
 
 // Honoアプリを作成する
-
 const app = new Hono()
 
 // CORSを設定する
-
 app.use(
   '/*',
   cors({
@@ -155,7 +122,6 @@ app.use(
 )
 
 // 音声プロファイルを取得する
-
 function toVoiceProfile(value: unknown): VoiceProfile | undefined {
   if (typeof value !== 'object' || value === null) {
     return undefined
@@ -171,7 +137,6 @@ function toVoiceProfile(value: unknown): VoiceProfile | undefined {
 }
 
 // VOICEVOXのaudio_queryを取得する
-
 async function requestTimingQuery(text: string): Promise<TimingAudioQuery> {
   const response = await fetch(
     `${VOICEVOX_URL}/audio_query?text=${encodeURIComponent(text)}&speaker=${SPEAKER_ID}`,
@@ -190,7 +155,6 @@ async function requestTimingQuery(text: string): Promise<TimingAudioQuery> {
 }
 
 // 長音かどうかを判定する
-
 function isLongVowel(mora: TimingMora, previous: TimingMora | undefined): boolean {
   if (!previous || mora.consonant !== null) {
     return false
@@ -200,7 +164,6 @@ function isLongVowel(mora: TimingMora, previous: TimingMora | undefined): boolea
 }
 
 // 長音の母音長を調整する
-
 function adjustLongVowels(moras: TimingMora[]): void {
   for (let index = 0; index < moras.length; index += 1) {
     const mora = moras[index]
@@ -216,7 +179,6 @@ function adjustLongVowels(moras: TimingMora[]): void {
 }
 
 // 特定の母音の長さを制限する
-
 function limitNoisyVowels(moras: TimingMora[]): void {
   for (const mora of moras) {
     if (!NOISY_VOWELS.includes(mora.vowel)) {
@@ -228,7 +190,6 @@ function limitNoisyVowels(moras: TimingMora[]): void {
 }
 
 // モーラ1つ分の発話時間を取得する
-
 function getMoraDuration(mora: TimingMora): number {
   const consonantLength =
     typeof mora.consonant_length === 'number' && Number.isFinite(mora.consonant_length)
@@ -244,7 +205,6 @@ function getMoraDuration(mora: TimingMora): number {
 }
 
 // 文字ごとの発話タイミングを取得する
-
 async function createNarrationTimings(text: string): Promise<NarrationTiming[]> {
   if (text.length === 0) {
     return []
@@ -261,8 +221,7 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
   const characterDurations: number[] = Array.from({ length: text.length }, () => 0)
   const characterPauses: number[] = Array.from({ length: text.length }, () => 0)
 
-  // 「、」「。」は発話文字に含めず、直前の発話と次の発話の間に置く
-
+  // 発話文字に含めない句読点の位置
   const punctuationIndices = new Set<number>()
 
   for (let index = 0; index < text.length; index += 1) {
@@ -271,8 +230,7 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
     }
   }
 
-  // VOICEVOXのモーラを発話文字に順番に割り当てる
-
+  // モーラと発話文字の対応付け
   let characterIndex = 0
 
   for (const phrase of query.accent_phrases) {
@@ -294,8 +252,7 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
       characterIndex += 1
     }
 
-    // 句の間のポーズは次の発話文字が始まる前に置く
-
+    // 句の間のポーズの配置
     if (phrase.pause_mora) {
       const pauseDuration = getMoraDuration(phrase.pause_mora) * TIMING_PAUSE_LENGTH_SCALE
 
@@ -328,8 +285,7 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
       ? query.post_phoneme_length
       : 0
 
-  // VOICEVOXの実際の発話時間に合わせてモーラの長さを伸ばす
-
+  // 実際の発話時間に合わせた倍率
   const pauseDuration = characterPauses.reduce((total, duration) => total + duration, 0)
 
   const targetDuration =
@@ -347,8 +303,7 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
   for (let index = 0; index < text.length; index += 1) {
     const character = text[index]
 
-    // 「、」「。」は次の音が始まる直前に表示する
-
+    // 句読点の表示位置
     if (character === '、' || character === '。') {
       timings[index] = {
         index,
@@ -358,8 +313,6 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
 
       continue
     }
-
-    // 次の発話文字の前に句読点のポーズを反映する
 
     currentTime += (characterPauses[index] ?? 0) * scale
 
@@ -381,13 +334,11 @@ async function createNarrationTimings(text: string): Promise<NarrationTiming[]> 
 }
 
 // ヘルスチェック
-
 app.get('/health', (c) => {
   return c.json({ status: 'ok' }, 200)
 })
 
 // 音声を文字起こしする
-
 app.post('/stt', async (c) => {
   const body = await c.req.arrayBuffer()
 
@@ -409,7 +360,6 @@ app.post('/stt', async (c) => {
 })
 
 // 物語を生成する
-
 app.post('/generate-story', async (c) => {
   const body = (await c.req.json().catch(() => null)) as GenerateStoryRequest | null
 
@@ -418,7 +368,7 @@ app.post('/generate-story', async (c) => {
   }
 
   try {
-    const storyText = await generateStory(body.text)
+    const storyText = await generateStory(body.text, Date.now())
 
     return c.json({ story_text: storyText }, 200)
   } catch (err) {
@@ -431,7 +381,6 @@ app.post('/generate-story', async (c) => {
 })
 
 // タグを抽出する
-
 app.post('/extract-tags', async (c) => {
   const body = (await c.req.json().catch(() => null)) as ExtractTagsRequest | null
 
@@ -455,7 +404,6 @@ app.post('/extract-tags', async (c) => {
 })
 
 // 音声を生成する
-
 app.post('/tts', async (c) => {
   const body = (await c.req.json().catch(() => null)) as TtsRequest | null
 
@@ -482,7 +430,6 @@ app.post('/tts', async (c) => {
 })
 
 // 文字表示用の発話タイミングを取得する
-
 app.post('/tts-timings', async (c) => {
   const body = (await c.req.json().catch(() => null)) as TtsTimingsRequest | null
 
@@ -504,7 +451,6 @@ app.post('/tts-timings', async (c) => {
 })
 
 // 日記を新規保存する
-
 app.post('/entries', async (c) => {
   const form = await c.req.parseBody({ all: true }).catch(() => null)
 
@@ -515,8 +461,7 @@ app.post('/entries', async (c) => {
   const tagsRaw = form.tags
   let tagsValue: unknown = undefined
 
-  // タグJSONを解析する
-
+  // タグJSONの解析
   if (typeof tagsRaw === 'string') {
     try {
       tagsValue = JSON.parse(tagsRaw)
@@ -525,8 +470,7 @@ app.post('/entries', async (c) => {
     }
   }
 
-  // 日記入力値を検証する
-
+  // 日記入力値の検証
   const parsed = CreateEntryFieldsSchema.safeParse({
     input_type: form.input_type,
     raw_input_text: form.raw_input_text,
@@ -538,12 +482,10 @@ app.post('/entries', async (c) => {
     return c.json({ error: '日記の内容が不正です' }, 400)
   }
 
-  // ナレーションファイルを取得する
-
+  // ナレーションファイルの取得
   const narrationFile = form.narration instanceof File ? form.narration : undefined
 
-  // 写真ファイルを取得する
-
+  // 写真ファイルの取得
   const photoFiles = Array.isArray(form.photos)
     ? form.photos.filter((item): item is File => item instanceof File)
     : form.photos instanceof File
@@ -551,20 +493,15 @@ app.post('/entries', async (c) => {
       : []
 
   try {
-    // 日記をデータベースに保存する
-
     const entry = createEntry(parsed.data)
 
-    // ナレーションを保存する
-
+    // ナレーションの保存
     const savedNarrationPath = narrationFile ? await saveNarration(entry.id, narrationFile) : null
 
-    // 写真を保存する
-
+    // 写真の保存
     const savedPhotoPaths = photoFiles.length > 0 ? await savePhotos(entry.id, photoFiles) : []
 
-    // メディアパスを更新する
-
+    // メディアパスの更新
     if (savedNarrationPath || savedPhotoPaths.length > 0) {
       updateEntryMediaPaths(entry.id, savedNarrationPath, savedPhotoPaths)
     }
@@ -585,7 +522,6 @@ app.post('/entries', async (c) => {
 })
 
 // 日記一覧を取得する
-
 app.get('/entries', (c) => {
   const query = {
     scene: c.req.query('scene'),
@@ -593,8 +529,7 @@ app.get('/entries', (c) => {
     month: c.req.query('month'),
   }
 
-  // 一覧取得条件を検証する
-
+  // 一覧取得条件の検証
   const parsed = ListEntriesQuerySchema.safeParse(query)
 
   if (!parsed.success) {
@@ -602,8 +537,6 @@ app.get('/entries', (c) => {
   }
 
   try {
-    // 日記一覧を取得する
-
     const entries = listEntries(parsed.data)
 
     return c.json({ entries }, 200)
@@ -613,7 +546,6 @@ app.get('/entries', (c) => {
 })
 
 // 日記のナレーション音声を取得する
-
 app.get('/entries/:id/narration', async (c) => {
   const id = c.req.param('id')
   const entry = getEntry(id)
@@ -621,8 +553,6 @@ app.get('/entries/:id/narration', async (c) => {
   if (!entry || !entry.narration_path) {
     return c.json({ error: '読み上げ音声が見つかりません' }, 404)
   }
-
-  // ナレーションファイルを取得する
 
   const file = Bun.file(narrationPath(id))
 
@@ -639,26 +569,20 @@ app.get('/entries/:id/narration', async (c) => {
 })
 
 // 日記の写真を取得する
-
 app.get('/entries/:id/photos/:filename', async (c) => {
   const id = c.req.param('id')
   const filename = c.req.param('filename')
 
-  // 写真ファイル名を検証する
-
+  // 写真ファイル名の検証
   if (!PHOTO_FILENAME_PATTERN.test(filename)) {
     return c.json({ error: '写真が見つかりません' }, 404)
   }
-
-  // 日記の存在を確認する
 
   const entry = getEntry(id)
 
   if (!entry) {
     return c.json({ error: '写真が見つかりません' }, 404)
   }
-
-  // 写真ファイルを取得する
 
   const file = Bun.file(photoPath(id, filename))
 
@@ -675,7 +599,6 @@ app.get('/entries/:id/photos/:filename', async (c) => {
 })
 
 // 日記を1件取得する
-
 app.get('/entries/:id', (c) => {
   try {
     const entry = getEntry(c.req.param('id'))
@@ -691,12 +614,9 @@ app.get('/entries/:id', (c) => {
 })
 
 // 日記を更新する
-
 app.patch('/entries/:id', async (c) => {
   const id = c.req.param('id')
   const existing = getEntry(id)
-
-  // 更新対象の日記を確認する
 
   if (!existing) {
     return c.json({ error: '日記が見つかりません' }, 404)
@@ -711,8 +631,7 @@ app.patch('/entries/:id', async (c) => {
   const tagsRaw = form.tags
   let tagsValue: unknown = undefined
 
-  // タグJSONを解析する
-
+  // タグJSONの解析
   if (typeof tagsRaw === 'string') {
     try {
       tagsValue = JSON.parse(tagsRaw)
@@ -721,8 +640,7 @@ app.patch('/entries/:id', async (c) => {
     }
   }
 
-  // 日記更新値を検証する
-
+  // 日記更新値の検証
   const parsed = UpdateEntryFieldsSchema.safeParse({
     story_text: typeof form.story_text === 'string' ? form.story_text : undefined,
     tags: tagsValue,
@@ -732,53 +650,41 @@ app.patch('/entries/:id', async (c) => {
     return c.json({ error: '日記の内容が不正です' }, 400)
   }
 
-  // ナレーションファイルを取得する
-
+  // ナレーションファイルの取得
   const narrationFile = form.narration instanceof File ? form.narration : undefined
 
-  // 写真ファイルを取得する
-
+  // 写真ファイルの取得
   const photoFiles = Array.isArray(form.photos)
     ? form.photos.filter((item): item is File => item instanceof File)
     : form.photos instanceof File
       ? [form.photos]
       : []
 
-  // 写真削除指定を取得する
-
+  // 写真削除指定の取得
   const shouldClearPhotos = form.clear_photos === 'true'
 
   try {
-    // 日記本文とタグを更新する
-
     updateEntry(id, parsed.data)
 
     let savedNarrationPath = existing.narration_path
     let savedPhotoPaths = existing.photo_paths
 
-    // ナレーションを更新する
-
+    // ナレーションの更新
     if (narrationFile) {
       savedNarrationPath = await saveNarration(id, narrationFile)
     }
 
-    // 写真を更新する
-
+    // 写真の更新
     if (photoFiles.length > 0) {
       removePhotos(id)
       savedPhotoPaths = await savePhotos(id, photoFiles)
     } else if (shouldClearPhotos) {
-      // 写真を削除する
-
       removePhotos(id)
       savedPhotoPaths = []
     }
 
-    // メディアパスを更新する
-
+    // メディアパスの更新
     updateEntryMediaPaths(id, savedNarrationPath, savedPhotoPaths)
-
-    // 更新後の日記を取得する
 
     const entry = getEntry(id)
 
@@ -789,12 +695,9 @@ app.patch('/entries/:id', async (c) => {
 })
 
 // 日記を削除する
-
 app.delete('/entries/:id', (c) => {
   try {
     const id = c.req.param('id')
-
-    // 日記を削除する
 
     const deleted = deleteEntry(id)
 
@@ -802,8 +705,7 @@ app.delete('/entries/:id', (c) => {
       return c.json({ error: '日記が見つかりません' }, 404)
     }
 
-    // 日記に紐づくメディアを削除する
-
+    // 日記に紐づくメディアの削除
     removeMedia(id)
 
     return c.json({ ok: true }, 200)
@@ -813,7 +715,6 @@ app.delete('/entries/:id', (c) => {
 })
 
 // Bunサーバーを起動する
-
 export default {
   port: 3000,
   hostname: '127.0.0.1',

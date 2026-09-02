@@ -12,7 +12,9 @@ General
 - If the place is not written or does not match any option, use "その他"
 
 感情 (choose one or more)
+- Always choose at least one. Never return an empty array
 - Base your choice on the feelings written in the text
+- When no feeling is stated directly, choose the one that best fits the mood of the text
 - When information about how the person spoke is given, use it together with the text. The same words can carry different feelings depending on the tone of voice
 - Do not invent feelings unrelated to both the text and the tone of voice
 """
