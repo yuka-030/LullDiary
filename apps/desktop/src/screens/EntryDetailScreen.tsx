@@ -1,33 +1,22 @@
 // apps/desktop/src/screens/EntryDetailScreen.tsx
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import AudioPlayButton from '../components/AudioPlayButton'
 import ConfirmModal from '../components/ConfirmModal'
 import PageTurningBook from '../components/PageTurningBook'
 import { SwapIcon, TrashIcon } from '../components/PhotoControlIcons'
-import { deleteEntry, narrationUrl, photoUrl, updateEntry } from '../lib/bookshelfClient'
 import type { Entry } from '../lib/entryTypes'
 import { TAG_OPTIONS } from '../lib/entryTypes'
-import { requestNarration, requestNarrationTimings } from '../lib/storyClient'
-import { useAudioNarration } from '../lib/useAudioNarration'
+import { useEntryDetail } from '../lib/useEntryDetail'
 
 type Props = {
   // 表示する日記
   entry: Entry
-  // 日付リストへの遷移
+  // 日付リストへ戻る
   onBackToDates: () => void
-  // 本棚への遷移
+  // 本棚へ戻る
   onBackToBookshelf: () => void
-  // 削除が完了した後の処理
+  // 削除後の処理
   onDeleted: () => void
-}
-
-// 開いている候補の種別
-type OpenMenu = 'scene' | 'emotion' | null
-
-// 物語文に混ざった文字列としての改行記号を除去する
-function normalizeStoryText(text: string): string {
-  return text.replace(/\\n/g, '').replace(/\/n/g, '')
 }
 
 export default function EntryDetailScreen({
@@ -36,288 +25,59 @@ export default function EntryDetailScreen({
   onBackToBookshelf,
   onDeleted,
 }: Props) {
-  // 編集中かどうか
-  const [isEditing, setIsEditing] = useState(false)
-  const [storyText, setStoryText] = useState(normalizeStoryText(entry.story_text))
-  const [tags, setTags] = useState(entry.tags)
-  const [photoPaths, setPhotoPaths] = useState(entry.photo_paths)
-  // 差し替える写真
-  const [photo, setPhoto] = useState<File | null>(null)
-  // 差し替える写真のプレビューURL
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
-  // 写真を外す指定
-  const [shouldClearPhoto, setShouldClearPhoto] = useState(false)
-  // 開いている候補
-  const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
-  // 候補の表示位置
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
-  const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isConfirmVisible, setIsConfirmVisible] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  // 保存済みの音声のURL
-  const [audioUrl, setAudioUrl] = useState<string | null>(
-    entry.narration_path ? narrationUrl(entry.id) : null
-  )
-  // 表示中の物語文
-  const [displayedStory, setDisplayedStory] = useState(normalizeStoryText(entry.story_text))
-  // VOICEVOXから取得した文字ごとの発話タイミング
-  const [narrationTimings, setNarrationTimings] = useState<
-    import('../lib/storyClient').NarrationTiming[]
-  >([])
-
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
-  const sceneButtonRef = useRef<HTMLButtonElement>(null)
-  const emotionButtonRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  const { displayedLength, isPaused, isTyping, togglePause, reset } = useAudioNarration({
+  const {
+    isEditing,
+    storyText,
+    displayedStory,
+    displayedLength,
+    isTyping,
+    isPaused,
+    tags,
+    displayedPhotoUrl,
+    openMenu,
+    menuPosition,
+    isSaving,
+    isDeleting,
+    isConfirmVisible,
+    errorMessage,
     audioUrl,
-    storyText: displayedStory,
-    isActive: !isEditing,
+    createdLabel,
     audioRef,
-    timings: narrationTimings,
-  })
+    photoInputRef,
+    sceneButtonRef,
+    emotionButtonRef,
+    menuRef,
+    togglePause,
+    toggleMenu,
+    selectScene,
+    toggleEmotion,
+    selectPhoto,
+    removePhoto,
+    startEditing,
+    cancelEditing,
+    changeStoryText,
+    save,
+    showDeleteConfirm,
+    cancelDelete,
+    remove,
+  } = useEntryDetail({ entry, onDeleted })
 
-  // 音声と文字を同期するためのタイミングを取得する
-  useEffect(() => {
-    if (isEditing || !audioUrl || displayedStory.length === 0) {
-      setNarrationTimings([])
-      return
-    }
-
-    let cancelled = false
-
-    // 新しい音声の再生前はいったんタイミングを空にする
-    setNarrationTimings([])
-
-    void requestNarrationTimings(displayedStory)
-      .then((timings) => {
-        if (cancelled) {
-          return
-        }
-
-        setNarrationTimings(timings)
-      })
-      .catch(() => {
-        if (cancelled) {
-          return
-        }
-
-        // タイミング取得に失敗した場合は、
-        // useAudioNarration側で音声全体の時間を使って同期する
-        setNarrationTimings([])
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [audioUrl, displayedStory, isEditing])
-
-  // 選択中の写真の解除
-  const clearPhotoPreview = useCallback(() => {
-    setPhoto(null)
-    setPhotoPreviewUrl((previous) => {
-      if (previous) {
-        URL.revokeObjectURL(previous)
-      }
-
-      return null
-    })
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      reset()
-      clearPhotoPreview()
-    }
-  }, [clearPhotoPreview, reset])
-
-  // 外側のクリックでの候補の閉じ込み
-  useEffect(() => {
-    if (openMenu === null) {
-      return
-    }
-
-    function handleClickOutside(e: MouseEvent) {
-      const target = e.target as Node
-
-      if (
-        sceneButtonRef.current?.contains(target) ||
-        emotionButtonRef.current?.contains(target) ||
-        menuRef.current?.contains(target)
-      ) {
-        return
-      }
-
-      setOpenMenu(null)
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [openMenu])
-
-  // 表示する写真のURL
-  const displayedPhotoUrl = photoPreviewUrl
-    ? photoPreviewUrl
-    : shouldClearPhoto || photoPaths.length === 0
-      ? null
-      : photoUrl(entry.id, photoPaths[0])
-
-  // 候補の開閉
-  function toggleMenu(menu: Exclude<OpenMenu, null>, button: HTMLButtonElement | null) {
-    if (openMenu === menu) {
-      setOpenMenu(null)
-      return
-    }
-
-    if (button) {
-      const rect = button.getBoundingClientRect()
-
-      setMenuPosition({ top: rect.bottom + 6, left: rect.left })
-    }
-
-    setOpenMenu(menu)
-  }
-
-  // シーンの選択
-  function selectScene(scene: (typeof TAG_OPTIONS.シーン)[number]) {
-    setTags({ ...tags, シーン: scene })
-    setOpenMenu(null)
-  }
-
-  // きもちの選択と解除
-  function toggleEmotion(emotion: (typeof TAG_OPTIONS.感情)[number]) {
-    const selected = tags.感情.includes(emotion)
-
-    // きもちは1つ以上必要
-    if (selected && tags.感情.length === 1) {
-      return
-    }
-
-    setTags({
-      ...tags,
-      感情: selected ? tags.感情.filter((item) => item !== emotion) : [...tags.感情, emotion],
-    })
-  }
-
-  // 写真の選択
+  // 写真を選択する
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
 
     e.target.value = ''
 
-    if (!file) {
-      return
-    }
-
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl)
-    }
-
-    setPhoto(file)
-    setPhotoPreviewUrl(URL.createObjectURL(file))
-    setShouldClearPhoto(false)
-  }
-
-  // 写真の取り外し
-  function handlePhotoRemove() {
-    clearPhotoPreview()
-    setShouldClearPhoto(true)
-  }
-
-  // 編集の開始
-  function handleEditStart() {
-    reset()
-    setIsEditing(true)
-  }
-
-  // 編集の取り消し
-  function handleEditCancel() {
-    setStoryText(displayedStory)
-    setTags(entry.tags)
-    clearPhotoPreview()
-    setShouldClearPhoto(false)
-    setErrorMessage(null)
-    setOpenMenu(null)
-    setIsEditing(false)
-  }
-
-  // 変更の保存
-  async function handleSave() {
-    setIsSaving(true)
-    setErrorMessage(null)
-
-    try {
-      const normalizedStoryText = normalizeStoryText(storyText)
-      const isStoryChanged = normalizedStoryText !== displayedStory
-
-      // 物語文を変えた場合の読み上げ音声の作り直し
-      let narration: Blob | undefined = undefined
-
-      if (isStoryChanged) {
-        const audio = await requestNarration(normalizedStoryText)
-        narration = new Blob([audio], { type: 'audio/wav' })
-      }
-
-      const updated = await updateEntry(entry.id, {
-        storyText: isStoryChanged ? normalizedStoryText : undefined,
-        tags: JSON.stringify(tags) !== JSON.stringify(entry.tags) ? tags : undefined,
-        narration,
-        photos: photo ? [photo] : [],
-        clearPhotos: shouldClearPhoto,
-      })
-
-      const normalizedUpdatedStory = normalizeStoryText(updated.story_text)
-
-      setStoryText(normalizedUpdatedStory)
-      setPhotoPaths(updated.photo_paths)
-      setDisplayedStory(normalizedUpdatedStory)
-      clearPhotoPreview()
-      setShouldClearPhoto(false)
-
-      // 差し替えた音声の再取得
-      if (narration) {
-        setAudioUrl(`${narrationUrl(entry.id)}?t=${Date.now()}`)
-      }
-
-      setOpenMenu(null)
-      setIsEditing(false)
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsSaving(false)
+    if (file) {
+      selectPhoto(file)
     }
   }
-
-  // 日記の削除
-  async function handleDelete() {
-    setIsConfirmVisible(false)
-    setIsDeleting(true)
-    setErrorMessage(null)
-
-    try {
-      await deleteEntry(entry.id)
-      onDeleted()
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : String(err))
-      setIsDeleting(false)
-    }
-  }
-
-  // 日付の表示
-  const createdDate = new Date(entry.created_at)
-  const createdLabel = `${createdDate.getFullYear()}年${createdDate.getMonth() + 1}月${createdDate.getDate()}日`
 
   return (
     <main className="story-screen">
       {errorMessage && <p className="story-error">{errorMessage}</p>}
 
-      <audio ref={audioRef} src={audioUrl ?? undefined} preload="auto" autoPlay />
+      <audio ref={audioRef} src={audioUrl ?? undefined} preload="auto" />
 
       <p className="book-outer-heading">{createdLabel}</p>
 
@@ -330,13 +90,13 @@ export default function EntryDetailScreen({
         />
 
         <div className="story-book-content">
-          {/* 左ページ:物語文を表示 */}
+          {/* 左ページの物語文 */}
           <div className="story-left-page">
             {isEditing ? (
               <textarea
                 lang="ja"
                 value={storyText}
-                onChange={(e) => setStoryText(normalizeStoryText(e.target.value))}
+                onChange={(e) => changeStoryText(e.target.value)}
                 className="entry-detail-text"
               />
             ) : (
@@ -349,7 +109,7 @@ export default function EntryDetailScreen({
             )}
           </div>
 
-          {/* 右ページ:写真とタグを表示 */}
+          {/* 右ページの写真とタグ */}
           <div className="story-right-page entry-detail-right">
             <input
               ref={photoInputRef}
@@ -393,7 +153,7 @@ export default function EntryDetailScreen({
                   変更
                 </button>
 
-                <button type="button" onClick={handlePhotoRemove} className="story-photo-control">
+                <button type="button" onClick={removePhoto} className="story-photo-control">
                   <TrashIcon className="story-photo-control-icon" />
                   削除
                 </button>
@@ -435,7 +195,7 @@ export default function EntryDetailScreen({
         </div>
       </div>
 
-      {/* タグの選択候補 */}
+      {/* タグ候補メニュー */}
       {isEditing &&
         openMenu !== null &&
         createPortal(
@@ -476,7 +236,7 @@ export default function EntryDetailScreen({
         <div className="story-actions story-actions-edit">
           <button
             type="button"
-            onClick={handleEditCancel}
+            onClick={cancelEditing}
             disabled={isSaving}
             className="font-body border-txt2 text-txt2 hover:bg-txt2 entry-detail-action cursor-pointer rounded-full border-2 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -485,7 +245,7 @@ export default function EntryDetailScreen({
 
           <button
             type="button"
-            onClick={handleSave}
+            onClick={save}
             disabled={isSaving}
             className="font-body bg-main hover:bg-glow entry-detail-action cursor-pointer rounded-full py-2 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -499,7 +259,7 @@ export default function EntryDetailScreen({
 
             <button
               type="button"
-              onClick={handleEditStart}
+              onClick={startEditing}
               className="font-body border-main text-main hover:bg-main cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white"
             >
               編集する
@@ -507,7 +267,7 @@ export default function EntryDetailScreen({
 
             <button
               type="button"
-              onClick={() => setIsConfirmVisible(true)}
+              onClick={showDeleteConfirm}
               disabled={isDeleting}
               className="font-body border-rec text-rec hover:bg-rec cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -532,8 +292,8 @@ export default function EntryDetailScreen({
           title="この日記を削除する?"
           message="削除すると、物語も音声も写真も戻せません。"
           confirmLabel="削除する"
-          onConfirm={handleDelete}
-          onCancel={() => setIsConfirmVisible(false)}
+          onConfirm={remove}
+          onCancel={cancelDelete}
         />
       )}
     </main>

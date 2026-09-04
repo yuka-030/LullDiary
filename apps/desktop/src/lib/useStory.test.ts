@@ -7,7 +7,7 @@ import { useStory, type StoryDeps } from './useStory'
 const INPUT_TEXT = '公園でねこを見かけて、しばらくながめていた。'
 
 const STORY_TEXT =
-  'あるところに、公園でまるくなったねこと出会って、心があたたかくなった人がいました。'
+  '今日は、公園で猫を見かけた日でした。丸くなって、日なたでじっとしています。しばらく、その姿を眺めていました。'
 
 const TAGS: Tags = { シーン: '自然', 感情: ['穏やか'] }
 
@@ -31,6 +31,7 @@ describe('useStory', () => {
   test('すべて成功すると物語・タグ・音声がそろう', async () => {
     const { result } = renderHook(() => useStory(createDeps()))
 
+    // 物語の生成
     await act(async () => {
       await result.current.generate(INPUT_TEXT)
     })
@@ -54,6 +55,7 @@ describe('useStory', () => {
 
     const { result } = renderHook(() => useStory(deps))
 
+    // 物語の生成
     await act(async () => {
       await result.current.generate(INPUT_TEXT)
     })
@@ -76,6 +78,7 @@ describe('useStory', () => {
 
     const { result } = renderHook(() => useStory(deps))
 
+    // 物語の生成
     await act(async () => {
       await result.current.generate(INPUT_TEXT)
     })
@@ -106,6 +109,7 @@ describe('useStory', () => {
 
     const { result } = renderHook(() => useStory(deps))
 
+    // 物語の生成
     await act(async () => {
       await result.current.generate(INPUT_TEXT)
     })
@@ -114,6 +118,7 @@ describe('useStory', () => {
       expect(result.current.narrationStatus).toBe('error')
     })
 
+    // 音声の再試行
     await act(async () => {
       result.current.retryNarration()
     })
@@ -137,6 +142,7 @@ describe('useStory', () => {
 
     const { result } = renderHook(() => useStory(deps))
 
+    // 物語の生成
     await act(async () => {
       await result.current.generate(INPUT_TEXT)
     })

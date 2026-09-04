@@ -1,12 +1,10 @@
 // apps/desktop/src/screens/StoryScreen.tsx
-import { useCallback, useEffect, useRef, useState } from 'react'
 import AudioPlayButton from '../components/AudioPlayButton'
 import BookCover from '../components/BookCover'
 import PageTurningBook from '../components/PageTurningBook'
 import { SwapIcon, TrashIcon } from '../components/PhotoControlIcons'
-import { createEntry } from '../lib/entryClient'
-import { useAudioNarration } from '../lib/useAudioNarration'
-import { useStory, type InputType } from '../lib/useStory'
+import type { InputType } from '../lib/useStory'
+import { useStoryScreen } from '../lib/useStoryScreen'
 
 type Props = {
   // 記録画面で確定した入力テキスト
@@ -17,190 +15,32 @@ type Props = {
   onSave: () => void
 }
 
-type StoryStage = 'cover' | 'turning' | 'open'
-
-// 表紙を消すまでの時間
-const COVER_HIDE_MS = 1200
-
 export default function StoryScreen({ inputText, inputType, onSave }: Props) {
   const {
-    status,
+    stage,
+    coverProgress,
+    pageProgress,
+    isCoverVisible,
+    storyText,
+    displayedLength,
+    isTyping,
+    isPaused,
+    audioUrl,
     narrationStatus,
-    storyText,
-    audioUrl,
     tags,
+    photoUrl,
+    isSaving,
     errorMessage,
-    generate,
+    saveError,
+    audioRef,
+    photoInputRef,
+    togglePause,
+    startGeneration,
     retryNarration,
-    audioRef,
-    narrationBlobRef,
-  } = useStory()
-
-  // 表示中の演出段階
-  const [stage, setStage] = useState<StoryStage>('cover')
-  // 表紙の開き具合
-  const [coverProgress, setCoverProgress] = useState(0)
-  // ページめくりの進行度
-  const [pageProgress, setPageProgress] = useState(0)
-  const [isCoverVisible, setIsCoverVisible] = useState(true)
-  const [photo, setPhoto] = useState<File | null>(null)
-  // 選択した写真のプレビューURL
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-
-  const coverTimerRef = useRef<number | null>(null)
-  const coverHideTimerRef = useRef<number | null>(null)
-  const pageTimerRef = useRef<number | null>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
-
-  // 読み上げ音声の成否が決着してから見開きへ切り替える
-  const isReady = status === 'ready' && narrationStatus !== 'generating'
-
-  const { displayedLength, isPaused, isTyping, togglePause, reset } = useAudioNarration({
-    audioUrl,
-    storyText,
-    isActive: stage === 'open',
-    audioRef,
-  })
-
-  // 演出用タイマーの停止
-  const clearTimers = useCallback(() => {
-    if (coverTimerRef.current !== null) {
-      window.clearTimeout(coverTimerRef.current)
-      coverTimerRef.current = null
-    }
-
-    if (coverHideTimerRef.current !== null) {
-      window.clearTimeout(coverHideTimerRef.current)
-      coverHideTimerRef.current = null
-    }
-
-    if (pageTimerRef.current !== null) {
-      window.clearInterval(pageTimerRef.current)
-      pageTimerRef.current = null
-    }
-  }, [])
-
-  // 選択中の写真の解除
-  const clearPhoto = useCallback(() => {
-    setPhoto(null)
-    setPhotoUrl((previous) => {
-      if (previous) {
-        URL.revokeObjectURL(previous)
-      }
-
-      return null
-    })
-  }, [])
-
-  // 演出状態を初期化して生成開始
-  const startGeneration = useCallback(() => {
-    clearTimers()
-    reset()
-    clearPhoto()
-
-    setStage('cover')
-    setCoverProgress(0)
-    setPageProgress(0)
-    setIsCoverVisible(true)
-    setSaveError(null)
-
-    generate(inputText)
-  }, [clearPhoto, clearTimers, generate, inputText, reset])
-
-  // 初回表示時に生成開始
-  useEffect(() => {
-    startGeneration()
-
-    return () => {
-      clearTimers()
-      reset()
-      clearPhoto()
-    }
-  }, [clearPhoto, clearTimers, inputText, reset, startGeneration])
-
-  // 閉じた本を2秒表示して表紙を開く
-  useEffect(() => {
-    if (stage !== 'cover') {
-      return
-    }
-
-    coverTimerRef.current = window.setTimeout(() => {
-      setCoverProgress(1)
-
-      window.setTimeout(() => {
-        setStage('turning')
-      }, 2500)
-    }, 2000)
-
-    return () => {
-      if (coverTimerRef.current !== null) {
-        window.clearTimeout(coverTimerRef.current)
-        coverTimerRef.current = null
-      }
-    }
-  }, [stage])
-
-  // スライドインの途中で表紙を消す
-  useEffect(() => {
-    if (stage !== 'turning') {
-      return
-    }
-
-    coverHideTimerRef.current = window.setTimeout(() => {
-      setIsCoverVisible(false)
-    }, COVER_HIDE_MS)
-
-    return () => {
-      if (coverHideTimerRef.current !== null) {
-        window.clearTimeout(coverHideTimerRef.current)
-        coverHideTimerRef.current = null
-      }
-    }
-  }, [stage])
-
-  // ページめくりの進行を更新
-  useEffect(() => {
-    if (stage !== 'turning') {
-      return
-    }
-
-    const pageDuration = 2400
-    let progress = 0
-
-    setPageProgress(0)
-
-    pageTimerRef.current = window.setInterval(() => {
-      progress += 0.1
-
-      if (progress >= 1) {
-        progress = 0
-      }
-
-      setPageProgress(progress)
-    }, pageDuration / 10)
-
-    return () => {
-      if (pageTimerRef.current !== null) {
-        window.clearInterval(pageTimerRef.current)
-        pageTimerRef.current = null
-      }
-    }
-  }, [stage])
-
-  // 生成完了時に見開き表示へ切り替え
-  useEffect(() => {
-    if (!isReady) {
-      return
-    }
-
-    clearTimers()
-
-    setStage('open')
-    setPageProgress(0)
-    setIsCoverVisible(false)
-  }, [clearTimers, isReady])
+    selectPhoto,
+    clearPhoto,
+    save,
+  } = useStoryScreen({ inputText, inputType, onSave })
 
   // 写真の選択
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -208,43 +48,8 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
 
     e.target.value = ''
 
-    if (!file) {
-      return
-    }
-
-    // 前のプレビューURLの解放
-    if (photoUrl) {
-      URL.revokeObjectURL(photoUrl)
-    }
-
-    setPhoto(file)
-    setPhotoUrl(URL.createObjectURL(file))
-  }
-
-  // 日記の保存
-  async function handleSave() {
-    if (!tags) {
-      return
-    }
-
-    setIsSaving(true)
-    setSaveError(null)
-
-    try {
-      await createEntry({
-        inputType,
-        rawInputText: inputText,
-        storyText,
-        tags,
-        narration: narrationBlobRef.current ?? undefined,
-        photos: photo ? [photo] : [],
-      })
-
-      onSave()
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsSaving(false)
+    if (file) {
+      selectPhoto(file)
     }
   }
 
@@ -336,6 +141,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
                         <SwapIcon className="story-photo-control-icon" />
                         変更
                       </button>
+
                       <button type="button" onClick={clearPhoto} className="story-photo-control">
                         <TrashIcon className="story-photo-control-icon" />
                         削除
@@ -397,7 +203,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
             {!isTyping && (
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={save}
                 disabled={isSaving || !tags}
                 className="font-body bg-main hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               >

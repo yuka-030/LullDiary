@@ -33,6 +33,9 @@ const NOISY_VOWEL_LENGTH_SCALE = 0.75
 // ノイズが出やすい母音の長さの上限
 const NOISY_VOWEL_LENGTH_LIMIT = 0.1
 
+// 後ろに区切りを入れる語
+const SPLIT_AFTER_WORDS = ['一日中', '一日']
+
 // モーラ1つ分の読み方の情報
 type Mora = {
   text: string
@@ -61,6 +64,37 @@ export class VoicevoxError extends Error {
     super(message)
     this.name = 'VoicevoxError'
   }
+}
+
+// 誤読しやすい語の後ろへの区切りの挿入
+export function insertReadingBreaks(text: string): string {
+  // 長い語から先に照合する
+  const words = [...SPLIT_AFTER_WORDS].sort((a, b) => b.length - a.length)
+
+  let result = ''
+  let index = 0
+
+  while (index < text.length) {
+    const matched = words.find((word) => text.startsWith(word, index))
+
+    if (!matched) {
+      result += text[index]
+      index += 1
+      continue
+    }
+
+    result += matched
+    index += matched.length
+
+    // 語の直後が漢字のときだけ区切る
+    const next = text[index]
+
+    if (next && /\p{Script=Han}/u.test(next)) {
+      result += '、'
+    }
+  }
+
+  return result
 }
 
 // 長音かどうかの判定
@@ -172,8 +206,10 @@ function smoothQuery(query: AudioQuery): AudioQuery {
 
 // 物語文から読み上げ音声を生成する
 export async function synthesize(text: string): Promise<ArrayBuffer> {
+  const readingText = insertReadingBreaks(text)
+
   const queryResponse = await fetch(
-    `${VOICEVOX_URL}/audio_query?text=${encodeURIComponent(text)}&speaker=${SPEAKER_ID}`,
+    `${VOICEVOX_URL}/audio_query?text=${encodeURIComponent(readingText)}&speaker=${SPEAKER_ID}`,
     { method: 'POST' }
   ).catch(() => {
     throw new VoicevoxError('VOICEVOXに接続できませんでした')
