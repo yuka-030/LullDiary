@@ -26,6 +26,9 @@ const TagsSchema = z.object({
   感情: z.array(z.enum(TAG_OPTIONS.感情)).min(1),
 })
 
+// モデルをメモリに保持する時間
+const OLLAMA_KEEP_ALIVE = '30m'
+
 // シーンの選択の目安
 const SCENE_HINTS: Record<string, string> = {
   家: '自宅、部屋、庭など',
@@ -48,7 +51,7 @@ const EMOTION_HINTS: Record<string, string> = {
   安心: 'ほっとした、心配が消えた、無事でよかった',
   穏やか: 'のんびりした、落ち着いた、ゆっくりできた、静かだった',
   不安: '心配だ、怖い、どうなるか分からない',
-  驚き: 'びっくりした、思いがけなかった、意外だった',
+  驚き: 'びっくりした、思いがけない、意外だった',
   疲れた: 'へとへと、力が出ない、体がしんどい',
   もやもや: '嫌になった、面倒だった、割り切れない、すっきりしない',
 }
@@ -83,6 +86,7 @@ function formatHints(hints: Record<string, string>): string {
     .join('\n')
 }
 
+// タグ抽出のプロンプト
 function buildPrompt(input: string): string {
   return `次の文章から、指定された選択肢の中だけを使ってタグを抽出してください。
 
@@ -138,6 +142,7 @@ async function requestTagsFromOllama(input: string): Promise<string> {
       prompt: buildPrompt(input),
       stream: false,
       format: 'json',
+      keep_alive: OLLAMA_KEEP_ALIVE,
     }),
   }).catch(() => {
     throw new TagExtractionError('Ollamaに接続できませんでした')

@@ -12,6 +12,9 @@ export class OllamaError extends Error {
   }
 }
 
+// モデルをメモリに保持する時間
+const OLLAMA_KEEP_ALIVE = '30m'
+
 // 物語生成のプロンプト
 function buildStoryPrompt(input: string): string {
   return `次の文章を、読み聞かせのような語り口に書き直してください。
@@ -80,6 +83,7 @@ async function generate(model: string, prompt: string, seed: number): Promise<st
       model,
       prompt,
       stream: false,
+      keep_alive: OLLAMA_KEEP_ALIVE,
       options: { seed },
     }),
   }).catch(() => {

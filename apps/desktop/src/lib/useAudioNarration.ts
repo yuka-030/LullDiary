@@ -18,6 +18,12 @@ type Options = {
 // 読み上げ音声がない場合の1文字あたりの表示間隔
 const FALLBACK_CHAR_INTERVAL_MS = 80
 
+// 読点の後の文字表示待機時間
+const COMMA_DISPLAY_PAUSE_SECONDS = 0.4
+
+// 句点の後の文字表示待機時間
+const PERIOD_DISPLAY_PAUSE_SECONDS = 0.7
+
 // タイミング未指定時の既定値
 const EMPTY_TIMINGS: NarrationTiming[] = []
 
@@ -73,14 +79,22 @@ export function useAudioNarration({
     // VOICEVOXから取得した文字タイミングを優先する
     if (timings.length >= storyText.length) {
       let nextLength = 0
+      let punctuationPause = 0
 
       for (const timing of timings) {
         if (timing.index >= storyText.length) {
           break
         }
 
-        if (currentTime >= timing.end) {
+        if (currentTime >= timing.end + punctuationPause) {
           nextLength = timing.index + 1
+
+          if (storyText[timing.index] === '、') {
+            punctuationPause += COMMA_DISPLAY_PAUSE_SECONDS
+          } else if (storyText[timing.index] === '。') {
+            punctuationPause += PERIOD_DISPLAY_PAUSE_SECONDS
+          }
+
           continue
         }
 
@@ -97,8 +111,7 @@ export function useAudioNarration({
       return
     }
 
-    // タイミング取得前・取得失敗時のフォールバック。
-    // 音声の実際の再生位置を基準にする。
+    // タイミング取得前・取得失敗時のフォールバック
     if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
       return
     }
@@ -364,8 +377,7 @@ export function useAudioNarration({
     syncDisplayedLength,
   ])
 
-  // タイミング取得が後から完了した場合でも、
-  // すでに再生中なら文字同期を再開する
+  // タイミング取得が後から完了した場合の文字同期
   useEffect(() => {
     const audio = audioRef.current
 

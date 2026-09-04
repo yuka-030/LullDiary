@@ -21,7 +21,7 @@ import { generateStory, OllamaError } from './story/ollama'
 import { transcribe, WhisperError } from './stt/whisper'
 import { extractTags, TagExtractionError } from './tag/ollama'
 import type { VoiceProfile } from './tag/voice'
-import { synthesize, VoicevoxError } from './tts/voicevox'
+import { insertReadingBreaks, synthesize, VoicevoxError } from './tts/voicevox'
 
 // VOICEVOXのローカルAPI
 const VOICEVOX_URL = process.env.VOICEVOX_URL
@@ -107,13 +107,13 @@ const NOISY_VOWEL_LENGTH_LIMIT = 0.1
 // 写真ファイル名
 const PHOTO_FILENAME_PATTERN = /^photo\d+\.jpg$/
 
-// データベースを初期化する
+// データベースの初期化
 migrate()
 
-// Honoアプリを作成する
+// Honoアプリ
 const app = new Hono()
 
-// CORSを設定する
+// CORSの設定
 app.use(
   '/*',
   cors({
@@ -121,7 +121,7 @@ app.use(
   })
 )
 
-// 音声プロファイルを取得する
+// 音声プロファイルの取得
 function toVoiceProfile(value: unknown): VoiceProfile | undefined {
   if (typeof value !== 'object' || value === null) {
     return undefined
@@ -136,10 +136,10 @@ function toVoiceProfile(value: unknown): VoiceProfile | undefined {
   return { averageLevel, levelVariation }
 }
 
-// VOICEVOXのaudio_queryを取得する
+// VOICEVOXのaudio_queryの取得
 async function requestTimingQuery(text: string): Promise<TimingAudioQuery> {
   const response = await fetch(
-    `${VOICEVOX_URL}/audio_query?text=${encodeURIComponent(text)}&speaker=${SPEAKER_ID}`,
+    `${VOICEVOX_URL}/audio_query?text=${encodeURIComponent(insertReadingBreaks(text))}&speaker=${SPEAKER_ID}`,
     {
       method: 'POST',
     }
@@ -154,7 +154,7 @@ async function requestTimingQuery(text: string): Promise<TimingAudioQuery> {
   return (await response.json()) as TimingAudioQuery
 }
 
-// 長音かどうかを判定する
+// 長音の判定
 function isLongVowel(mora: TimingMora, previous: TimingMora | undefined): boolean {
   if (!previous || mora.consonant !== null) {
     return false
@@ -163,7 +163,7 @@ function isLongVowel(mora: TimingMora, previous: TimingMora | undefined): boolea
   return mora.vowel === previous.vowel
 }
 
-// 長音の母音長を調整する
+// 長音の母音長の調整
 function adjustLongVowels(moras: TimingMora[]): void {
   for (let index = 0; index < moras.length; index += 1) {
     const mora = moras[index]
@@ -178,7 +178,7 @@ function adjustLongVowels(moras: TimingMora[]): void {
   }
 }
 
-// 特定の母音の長さを制限する
+// 特定の母音の長さの制限
 function limitNoisyVowels(moras: TimingMora[]): void {
   for (const mora of moras) {
     if (!NOISY_VOWELS.includes(mora.vowel)) {
@@ -189,7 +189,7 @@ function limitNoisyVowels(moras: TimingMora[]): void {
   }
 }
 
-// モーラ1つ分の発話時間を取得する
+// モーラ1つ分の発話時間
 function getMoraDuration(mora: TimingMora): number {
   const consonantLength =
     typeof mora.consonant_length === 'number' && Number.isFinite(mora.consonant_length)
@@ -204,7 +204,7 @@ function getMoraDuration(mora: TimingMora): number {
   return consonantLength + vowelLength
 }
 
-// 文字ごとの発話タイミングを取得する
+// 文字ごとの発話タイミングの算出
 async function createNarrationTimings(text: string): Promise<NarrationTiming[]> {
   if (text.length === 0) {
     return []
@@ -338,7 +338,7 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok' }, 200)
 })
 
-// 音声を文字起こしする
+// 音声の文字起こし
 app.post('/stt', async (c) => {
   const body = await c.req.arrayBuffer()
 
@@ -359,7 +359,7 @@ app.post('/stt', async (c) => {
   }
 })
 
-// 物語を生成する
+// 物語の生成
 app.post('/generate-story', async (c) => {
   const body = (await c.req.json().catch(() => null)) as GenerateStoryRequest | null
 
@@ -380,7 +380,7 @@ app.post('/generate-story', async (c) => {
   }
 })
 
-// タグを抽出する
+// タグの抽出
 app.post('/extract-tags', async (c) => {
   const body = (await c.req.json().catch(() => null)) as ExtractTagsRequest | null
 
@@ -403,7 +403,7 @@ app.post('/extract-tags', async (c) => {
   }
 })
 
-// 音声を生成する
+// 音声の生成
 app.post('/tts', async (c) => {
   const body = (await c.req.json().catch(() => null)) as TtsRequest | null
 
@@ -429,7 +429,7 @@ app.post('/tts', async (c) => {
   }
 })
 
-// 文字表示用の発話タイミングを取得する
+// 文字表示用の発話タイミングの取得
 app.post('/tts-timings', async (c) => {
   const body = (await c.req.json().catch(() => null)) as TtsTimingsRequest | null
 
@@ -450,7 +450,7 @@ app.post('/tts-timings', async (c) => {
   }
 })
 
-// 日記を新規保存する
+// 日記の新規保存
 app.post('/entries', async (c) => {
   const form = await c.req.parseBody({ all: true }).catch(() => null)
 
@@ -521,7 +521,7 @@ app.post('/entries', async (c) => {
   }
 })
 
-// 日記一覧を取得する
+// 日記一覧の取得
 app.get('/entries', (c) => {
   const query = {
     scene: c.req.query('scene'),
@@ -545,7 +545,7 @@ app.get('/entries', (c) => {
   }
 })
 
-// 日記のナレーション音声を取得する
+// 日記のナレーション音声の取得
 app.get('/entries/:id/narration', async (c) => {
   const id = c.req.param('id')
   const entry = getEntry(id)
@@ -560,15 +560,17 @@ app.get('/entries/:id/narration', async (c) => {
     return c.json({ error: '読み上げ音声が見つかりません' }, 404)
   }
 
+  // 再生時間の取得に必要なファイルサイズ
   return new Response(file, {
     status: 200,
     headers: {
       'Content-Type': 'audio/wav',
+      'Content-Length': String(file.size),
     },
   })
 })
 
-// 日記の写真を取得する
+// 日記の写真の取得
 app.get('/entries/:id/photos/:filename', async (c) => {
   const id = c.req.param('id')
   const filename = c.req.param('filename')
@@ -598,7 +600,7 @@ app.get('/entries/:id/photos/:filename', async (c) => {
   })
 })
 
-// 日記を1件取得する
+// 日記1件の取得
 app.get('/entries/:id', (c) => {
   try {
     const entry = getEntry(c.req.param('id'))
@@ -613,7 +615,7 @@ app.get('/entries/:id', (c) => {
   }
 })
 
-// 日記を更新する
+// 日記の更新
 app.patch('/entries/:id', async (c) => {
   const id = c.req.param('id')
   const existing = getEntry(id)
@@ -694,7 +696,7 @@ app.patch('/entries/:id', async (c) => {
   }
 })
 
-// 日記を削除する
+// 日記の削除
 app.delete('/entries/:id', (c) => {
   try {
     const id = c.req.param('id')
@@ -714,7 +716,7 @@ app.delete('/entries/:id', (c) => {
   }
 })
 
-// Bunサーバーを起動する
+// Bunサーバーの起動
 export default {
   port: 3000,
   hostname: '127.0.0.1',
