@@ -1,4 +1,4 @@
-// apps/desktop/src/lib/wavEncoder.ts
+// apps/desktop/src/lib/recording/wavEncoder.ts
 
 /**
  * Web Audio APIで取得したPCMデータ(Float32Array)を、

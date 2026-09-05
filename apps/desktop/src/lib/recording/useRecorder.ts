@@ -1,4 +1,4 @@
-// apps/desktop/src/lib/useRecorder.ts
+// apps/desktop/src/lib/recording/useRecorder.ts
 import { invoke } from '@tauri-apps/api/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { requestTranscription } from './sttClient'

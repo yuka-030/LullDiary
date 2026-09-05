@@ -1,10 +1,11 @@
 // apps/desktop/src/screens/StoryScreen.tsx
-import AudioPlayButton from '../components/AudioPlayButton'
-import BookCover from '../components/BookCover'
-import PageTurningBook from '../components/PageTurningBook'
-import { SwapIcon, TrashIcon } from '../components/PhotoControlIcons'
-import type { InputType } from '../lib/useStory'
-import { useStoryScreen } from '../lib/useStoryScreen'
+import PageTurningBook from '../components/shared/PageTurningBook'
+import PhotoIcon from '../components/shared/PhotoIcon'
+import AudioPlayButton from '../components/story/AudioPlayButton'
+import BookCover from '../components/story/BookCover'
+import { SwapIcon, TrashIcon } from '../components/story/PhotoControlIcons'
+import type { InputType } from '../lib/story/useStory'
+import { useStoryScreen } from '../lib/story/useStoryScreen'
 
 type Props = {
   // 記録画面で確定した入力テキスト
@@ -214,22 +215,5 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
         </>
       )}
     </main>
-  )
-}
-
-// 写真アイコン
-function PhotoIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth={1.5} />
-      <circle cx="8.5" cy="10" r="1.5" stroke="currentColor" strokeWidth={1.5} />
-      <path
-        d="M21 15l-5-5-9 9"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   )
 }

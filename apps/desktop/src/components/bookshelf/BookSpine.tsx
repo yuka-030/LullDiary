@@ -1,4 +1,4 @@
-// apps/desktop/src/components/BookSpine.tsx
+// apps/desktop/src/components/bookshelf/BookSpine.tsx
 type Props = {
   // 背表紙に表示する月
   monthNumber: number

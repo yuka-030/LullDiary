@@ -1,4 +1,4 @@
-// apps/desktop/src/components/BookCover.tsx
+// apps/desktop/src/components/story/BookCover.tsx
 
 type Props = {
   // 外側に付与するクラス名

@@ -1,4 +1,4 @@
-// apps/desktop/src/components/PhotoControlIcons.tsx
+// apps/desktop/src/components/story/PhotoControlIcons.tsx
 
 // 差し替えアイコン
 export function SwapIcon({ className }: { className?: string }) {

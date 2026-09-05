@@ -1,6 +1,6 @@
 // apps/desktop/src/App.tsx
 import { useState } from 'react'
-import type { Entry } from './lib/entryTypes'
+import type { Entry } from './lib/bookshelf/entryTypes'
 import BookshelfScreen from './screens/BookshelfScreen'
 import EntryDetailScreen from './screens/EntryDetailScreen'
 import HomeScreen from './screens/HomeScreen'

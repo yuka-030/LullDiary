@@ -1,12 +1,13 @@
 // apps/desktop/src/screens/EntryDetailScreen.tsx
 import { createPortal } from 'react-dom'
-import AudioPlayButton from '../components/AudioPlayButton'
-import ConfirmModal from '../components/ConfirmModal'
-import PageTurningBook from '../components/PageTurningBook'
-import { SwapIcon, TrashIcon } from '../components/PhotoControlIcons'
-import type { Entry } from '../lib/entryTypes'
-import { TAG_OPTIONS } from '../lib/entryTypes'
-import { useEntryDetail } from '../lib/useEntryDetail'
+import PageTurningBook from '../components/shared/PageTurningBook'
+import PhotoIcon from '../components/shared/PhotoIcon'
+import AudioPlayButton from '../components/story/AudioPlayButton'
+import ConfirmModal from '../components/story/ConfirmModal'
+import { SwapIcon, TrashIcon } from '../components/story/PhotoControlIcons'
+import type { Entry } from '../lib/bookshelf/entryTypes'
+import { TAG_OPTIONS } from '../lib/bookshelf/entryTypes'
+import { useEntryDetail } from '../lib/story/useEntryDetail'
 
 type Props = {
   // 表示する日記
@@ -297,22 +298,5 @@ export default function EntryDetailScreen({
         />
       )}
     </main>
-  )
-}
-
-// 写真アイコン
-function PhotoIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth={1.5} />
-      <circle cx="8.5" cy="10" r="1.5" stroke="currentColor" strokeWidth={1.5} />
-      <path
-        d="M21 15l-5-5-9 9"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   )
 }

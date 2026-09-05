@@ -1,4 +1,4 @@
-// apps/desktop/src/components/TranscriptModal.tsx
+// apps/desktop/src/components/recording/TranscriptModal.tsx
 import { useEffect, useRef, useState } from 'react'
 
 // 1文字を表示する間隔(ミリ秒)

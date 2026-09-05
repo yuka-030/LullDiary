@@ -1,5 +1,5 @@
-// apps/desktop/src/lib/entryClient.ts
-import type { InputType } from './useStory'
+// apps/desktop/src/lib/shared/entryClient.ts
+import type { InputType } from '../story/useStory'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 

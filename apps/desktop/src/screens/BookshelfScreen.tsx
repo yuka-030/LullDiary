@@ -1,11 +1,9 @@
 // apps/desktop/src/screens/BookshelfScreen.tsx
-import { useCallback, useEffect, useState } from 'react'
-import BookSpine from '../components/BookSpine'
-import EntryFilter from '../components/EntryFilter'
-import PageTurningBook from '../components/PageTurningBook'
-import { fetchEntries } from '../lib/bookshelfClient'
-import type { Entry, EntryFilter as Filter, MonthlyBook } from '../lib/entryTypes'
-import { collectYears, groupByMonth } from '../lib/entryTypes'
+import BookSpine from '../components/bookshelf/BookSpine'
+import EntryFilter from '../components/bookshelf/EntryFilter'
+import PageTurningBook from '../components/shared/PageTurningBook'
+import type { Entry } from '../lib/bookshelf/entryTypes'
+import { formatEntryDay, useBookshelfScreen } from '../lib/bookshelf/useBookshelfScreen'
 
 type Props = {
   // 最初に開く月(YYYY-MM)
@@ -16,135 +14,33 @@ type Props = {
   onSelectEntry: (entry: Entry, month: string) => void
 }
 
-// 見開き1ページあたりの日付の数
-const DATES_PER_PAGE = 7
-
-// 一度に表示する段の数
-const SHELVES_PER_PAGE = 3
-
-// 年ごとにまとめた段
-type YearShelf = {
-  year: number
-  books: MonthlyBook[]
-}
-
 export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }: Props) {
-  const [filter, setFilter] = useState<Filter>({ emotions: [] })
-  const [books, setBooks] = useState<MonthlyBook[]>([])
-  // 開いている月(YYYY-MM)
-  const [openedMonth, setOpenedMonth] = useState<string | null>(initialMonth ?? null)
-  // 日付リストの表示ページ
-  const [datePage, setDatePage] = useState(0)
-  // 本棚の表示ページ
-  const [shelfPage, setShelfPage] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  const years = collectYears(books)
-  const openedBook = books.find((book) => book.month === openedMonth) ?? null
-
-  // 年と月で絞り込んだ本
-  const visibleBooks = books.filter((book) => {
-    if (filter.year !== undefined && book.year !== filter.year) {
-      return false
-    }
-
-    if (filter.month !== undefined && book.monthNumber !== filter.month) {
-      return false
-    }
-
-    return true
-  })
-
-  // 年ごとの段
-  const shelves: YearShelf[] = []
-
-  for (const book of visibleBooks) {
-    const shelf = shelves.find((item) => item.year === book.year)
-
-    if (shelf) {
-      shelf.books.push(book)
-    } else {
-      shelves.push({ year: book.year, books: [book] })
-    }
-  }
-
-  shelves.sort((a, b) => b.year - a.year)
-
-  const shelfPages: YearShelf[][] = []
-
-  for (let index = 0; index < shelves.length; index += SHELVES_PER_PAGE) {
-    shelfPages.push(shelves.slice(index, index + SHELVES_PER_PAGE))
-  }
-
-  const currentShelves = shelfPages[shelfPage] ?? []
-
-  // 空の段を含めた表示用の段
-  const filledShelves: (YearShelf | null)[] = []
-
-  for (let index = 0; index < SHELVES_PER_PAGE; index += 1) {
-    filledShelves.push(currentShelves[index] ?? null)
-  }
-
-  // シーンと感情に合う日記の取得
-  const loadEntries = useCallback(async () => {
-    setIsLoading(true)
-    setErrorMessage(null)
-
-    try {
-      const entries = await fetchEntries(filter)
-      const grouped = groupByMonth(entries)
-
-      setBooks(grouped)
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [filter])
-
-  useEffect(() => {
-    void loadEntries()
-  }, [loadEntries])
-
-  // 表示ページの範囲の補正
-  useEffect(() => {
-    setShelfPage((page) => (page < shelfPages.length ? page : 0))
-  }, [shelfPages.length])
-
-  // 本を開く
-  function handleOpenBook(book: MonthlyBook) {
-    setOpenedMonth(book.month)
-    setDatePage(0)
-  }
-
-  // 本を閉じる
-  function handleCloseBook() {
-    setOpenedMonth(null)
-    setDatePage(0)
-  }
-
-  // 見開き単位の日付
-  const datePages: Entry[][] = []
-
-  if (openedBook) {
-    const sorted = [...openedBook.entries].sort((a, b) => a.created_at.localeCompare(b.created_at))
-
-    for (let index = 0; index < sorted.length; index += DATES_PER_PAGE * 2) {
-      datePages.push(sorted.slice(index, index + DATES_PER_PAGE * 2))
-    }
-  }
-
-  const currentDates = datePages[datePage] ?? []
-  const leftDates = currentDates.slice(0, DATES_PER_PAGE)
-  const rightDates = currentDates.slice(DATES_PER_PAGE)
-
-  // 日付の表示
-  function formatDate(entry: Entry) {
-    const date = new Date(entry.created_at)
-
-    return `${date.getDate()}日`
-  }
+  const {
+    filter,
+    setFilter,
+    years,
+    isLoading,
+    errorMessage,
+    hasVisibleBooks,
+    filledShelves,
+    shelfPage,
+    shelfPageCount,
+    isFirstShelfPage,
+    isLastShelfPage,
+    goToPreviousShelfPage,
+    goToNextShelfPage,
+    openedBook,
+    openBook,
+    closeBook,
+    datePage,
+    datePageCount,
+    isFirstDatePage,
+    isLastDatePage,
+    goToPreviousDatePage,
+    goToNextDatePage,
+    leftDates,
+    rightDates,
+  } = useBookshelfScreen({ initialMonth })
 
   // 選んだ月の見開き
   if (openedBook) {
@@ -172,7 +68,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
                       onClick={() => onSelectEntry(entry, openedBook.month)}
                       className="bookshelf-date-item"
                     >
-                      <span className="bookshelf-date-day">{formatDate(entry)}</span>
+                      <span className="bookshelf-date-day">{formatEntryDay(entry)}</span>
                       <span className="bookshelf-date-excerpt">
                         {entry.story_text.slice(0, 18)}
                       </span>
@@ -191,7 +87,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
                       onClick={() => onSelectEntry(entry, openedBook.month)}
                       className="bookshelf-date-item"
                     >
-                      <span className="bookshelf-date-day">{formatDate(entry)}</span>
+                      <span className="bookshelf-date-day">{formatEntryDay(entry)}</span>
                       <span className="bookshelf-date-excerpt">
                         {entry.story_text.slice(0, 18)}
                       </span>
@@ -201,7 +97,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
               </ul>
 
               {/* ページの重なり */}
-              {datePage < datePages.length - 1 && <span className="bookshelf-page-hint" />}
+              {!isLastDatePage && <span className="bookshelf-page-hint" />}
             </div>
           </div>
         </div>
@@ -210,21 +106,21 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
           <div className="story-actions-line">
             <button
               type="button"
-              onClick={() => setDatePage((page) => Math.max(0, page - 1))}
-              disabled={datePage === 0}
+              onClick={goToPreviousDatePage}
+              disabled={isFirstDatePage}
               className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               前のページ
             </button>
 
             <span className="font-body text-txt2 text-sm">
-              {datePages.length === 0 ? '0 / 0' : `${datePage + 1} / ${datePages.length}`}
+              {datePageCount === 0 ? '0 / 0' : `${datePage + 1} / ${datePageCount}`}
             </span>
 
             <button
               type="button"
-              onClick={() => setDatePage((page) => Math.min(datePages.length - 1, page + 1))}
-              disabled={datePage >= datePages.length - 1}
+              onClick={goToNextDatePage}
+              disabled={isLastDatePage}
               className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               次のページ
@@ -232,7 +128,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
           </div>
 
           <div className="story-actions-line">
-            <button type="button" onClick={handleCloseBook} className="back-link">
+            <button type="button" onClick={closeBook} className="back-link">
               ← 本棚にもどる
             </button>
           </div>
@@ -248,7 +144,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
       {errorMessage && <p className="bookshelf-error">{errorMessage}</p>}
 
       <div className="bookshelf-frame">
-        {isLoading || visibleBooks.length === 0 ? (
+        {isLoading || !hasVisibleBooks ? (
           <p className="bookshelf-empty">{isLoading ? 'よみこんでいるよ…' : 'まだ本がないよ'}</p>
         ) : null}
 
@@ -261,7 +157,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
                 key={book.month}
                 monthNumber={book.monthNumber}
                 variant={(bookIndex % 3) / 2}
-                onSelect={() => handleOpenBook(book)}
+                onSelect={() => openBook(book)}
               />
             ))}
           </div>
@@ -269,25 +165,25 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
       </div>
 
       <div className="bookshelf-actions">
-        {shelfPages.length > 1 && (
+        {shelfPageCount > 1 && (
           <>
             <button
               type="button"
-              onClick={() => setShelfPage((page) => Math.max(0, page - 1))}
-              disabled={shelfPage === 0}
+              onClick={goToPreviousShelfPage}
+              disabled={isFirstShelfPage}
               className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-5 py-1.5 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               前の本棚
             </button>
 
             <span className="font-body text-txt2 text-sm">
-              {shelfPage + 1} / {shelfPages.length}
+              {shelfPage + 1} / {shelfPageCount}
             </span>
 
             <button
               type="button"
-              onClick={() => setShelfPage((page) => Math.min(shelfPages.length - 1, page + 1))}
-              disabled={shelfPage >= shelfPages.length - 1}
+              onClick={goToNextShelfPage}
+              disabled={isLastShelfPage}
               className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-5 py-1.5 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               次の本棚

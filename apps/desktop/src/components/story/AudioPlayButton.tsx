@@ -1,4 +1,4 @@
-// apps/desktop/src/components/AudioPlayButton.tsx
+// apps/desktop/src/components/story/AudioPlayButton.tsx
 type Props = {
   // 停止中かどうか
   isPaused: boolean

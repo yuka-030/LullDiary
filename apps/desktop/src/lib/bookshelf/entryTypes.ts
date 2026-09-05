@@ -1,5 +1,5 @@
-// apps/desktop/src/lib/entryTypes.ts
-import type { Tags } from './entryClient'
+// apps/desktop/src/lib/bookshelf/entryTypes.ts
+import type { Tags } from '../shared/entryClient'
 
 // タグの選択肢
 export const TAG_OPTIONS = {

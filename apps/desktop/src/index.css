@@ -78,11 +78,6 @@ body {
   transition: opacity 1s linear;
 }
 
-/* 経過した分のドット */
-.recording-dot-spent {
-  opacity: 0;
-}
-
 /* もどるボタン */
 .back-link {
   padding: 3px 10px;
@@ -349,30 +344,6 @@ body {
   letter-spacing: 0.08em;
   opacity: calc(1 - var(--cover-progress, 0));
   transition: opacity 0.8s ease;
-}
-
-/* 表紙下に隠れているページ */
-.book-cover-opening {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  transform-style: preserve-3d;
-}
-
-.book-cover-opening-inner {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  transform: rotateY(calc(var(--cover-progress, 0) * -180deg));
-  transform-style: preserve-3d;
-}
-
-.book-cover-opening-page {
-  position: absolute;
-  inset: 0;
-  background: var(--color-bg);
-  backface-visibility: hidden;
 }
 
 /* 生成中の文言の配置枠 */

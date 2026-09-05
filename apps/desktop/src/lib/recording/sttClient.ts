@@ -1,4 +1,4 @@
-// apps/desktop/src/lib/sttClient.ts
+// apps/desktop/src/lib/recording/sttClient.ts
 
 // ローカルAPIサーバー(Hono)のベースURL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL

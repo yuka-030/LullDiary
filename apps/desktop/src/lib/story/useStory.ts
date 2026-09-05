@@ -1,6 +1,6 @@
-// apps/desktop/src/lib/useStory.ts
+// apps/desktop/src/lib/story/useStory.ts
 import { useCallback, useRef, useState } from 'react'
-import type { Tags } from './entryClient'
+import type { Tags } from '../shared/entryClient'
 import { requestNarration, requestStory, requestTags } from './storyClient'
 
 export type StoryStatus = 'generating' | 'ready' | 'error'
