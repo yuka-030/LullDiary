@@ -1,8 +1,8 @@
-// apps/desktop/src/components/EntryFilter.tsx
+// apps/desktop/src/components/bookshelf/EntryFilter.tsx
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { EntryFilter as Filter } from '../lib/entryTypes'
-import { TAG_OPTIONS } from '../lib/entryTypes'
+import type { EntryFilter as Filter } from '../../lib/bookshelf/entryTypes'
+import { TAG_OPTIONS } from '../../lib/bookshelf/entryTypes'
 
 type Props = {
   // 現在の絞り込み条件

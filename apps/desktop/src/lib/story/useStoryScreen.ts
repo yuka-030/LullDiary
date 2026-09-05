@@ -1,6 +1,6 @@
-// apps/desktop/src/lib/useStoryScreen.ts
+// apps/desktop/src/lib/story/useStoryScreen.ts
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createEntry } from './entryClient'
+import { createEntry } from '../shared/entryClient'
 import { requestNarrationTimings, type NarrationTiming } from './storyClient'
 import { useAudioNarration } from './useAudioNarration'
 import { useStory, type InputType } from './useStory'

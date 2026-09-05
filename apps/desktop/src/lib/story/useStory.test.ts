@@ -1,7 +1,7 @@
-// apps/desktop/src/lib/useStory.test.ts
+// apps/desktop/src/lib/story/useStory.test.ts
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
-import type { Tags } from './entryClient'
+import type { Tags } from '../shared/entryClient'
 import { useStory, type StoryDeps } from './useStory'
 
 const INPUT_TEXT = '公園でねこを見かけて、しばらくながめていた。'

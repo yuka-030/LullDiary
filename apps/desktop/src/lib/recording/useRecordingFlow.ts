@@ -1,4 +1,4 @@
-// apps/desktop/src/lib/useRecordingFlow.ts
+// apps/desktop/src/lib/recording/useRecordingFlow.ts
 import { useCallback, useState } from 'react'
 import { MAX_RECORDING_SECONDS, useRecorder } from './useRecorder'
 

@@ -1,4 +1,4 @@
-// apps/desktop/src/components/ConfirmModal.tsx
+// apps/desktop/src/components/story/ConfirmModal.tsx
 type Props = {
   // 確認の見出し
   title: string

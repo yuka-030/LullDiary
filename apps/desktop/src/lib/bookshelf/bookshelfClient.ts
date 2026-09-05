@@ -1,5 +1,5 @@
-// apps/desktop/src/lib/bookshelfClient.ts
-import type { Tags } from './entryClient'
+// apps/desktop/src/lib/bookshelf/bookshelfClient.ts
+import type { Tags } from '../shared/entryClient'
 import type { Entry, EntryFilter } from './entryTypes'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL

@@ -1,4 +1,4 @@
-// apps/desktop/src/components/PageTurningBook.tsx
+// apps/desktop/src/components/shared/PageTurningBook.tsx
 
 type Props = {
   // 外側に付与するクラス名

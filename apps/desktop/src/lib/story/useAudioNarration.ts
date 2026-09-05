@@ -1,4 +1,4 @@
-// apps/desktop/src/lib/useAudioNarration.ts
+// apps/desktop/src/lib/story/useAudioNarration.ts
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { NarrationTiming } from './storyClient'
 

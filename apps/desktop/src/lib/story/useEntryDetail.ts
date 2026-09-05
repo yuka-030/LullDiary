@@ -1,10 +1,14 @@
-// apps/desktop/src/lib/useEntryDetail.ts
+// apps/desktop/src/lib/story/useEntryDetail.ts
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { deleteEntry, narrationUrl, photoUrl, updateEntry } from './bookshelfClient'
-import type { Entry } from './entryTypes'
-import { TAG_OPTIONS } from './entryTypes'
-import { requestNarration, requestNarrationTimings, type NarrationTiming } from './storyClient'
-import { useAudioNarration } from './useAudioNarration'
+import { deleteEntry, narrationUrl, photoUrl, updateEntry } from '../bookshelf/bookshelfClient'
+import type { Entry } from '../bookshelf/entryTypes'
+import { TAG_OPTIONS } from '../bookshelf/entryTypes'
+import {
+  requestNarration,
+  requestNarrationTimings,
+  type NarrationTiming,
+} from '../story/storyClient'
+import { useAudioNarration } from '../story/useAudioNarration'
 
 // 開いている候補の種別
 export type OpenMenu = 'scene' | 'emotion' | null
