@@ -15,7 +15,7 @@ export type NarrationTiming = {
   end: number
 }
 
-// 確定したテキストを /generate-story に送信し、物語文を受け取る
+// 確定テキストの送信と物語文の取得
 export async function requestStory(text: string): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/generate-story`, {
     method: 'POST',
@@ -33,7 +33,7 @@ export async function requestStory(text: string): Promise<string> {
   return typeof body.story_text === 'string' ? body.story_text : ''
 }
 
-// 物語文を /tts に送信し、読み上げ音声(WAV)を受け取る
+// 物語文の送信と読み上げ音声の取得
 export async function requestNarration(text: string): Promise<ArrayBuffer> {
   const response = await fetch(`${API_BASE_URL}/tts`, {
     method: 'POST',
@@ -50,7 +50,7 @@ export async function requestNarration(text: string): Promise<ArrayBuffer> {
   return response.arrayBuffer()
 }
 
-// 物語文の文字ごとの発話タイミングを取得する
+// 物語文の文字ごとの発話タイミングの取得
 export async function requestNarrationTimings(text: string): Promise<NarrationTiming[]> {
   const response = await fetch(`${API_BASE_URL}/tts-timings`, {
     method: 'POST',
@@ -84,7 +84,7 @@ export async function requestNarrationTimings(text: string): Promise<NarrationTi
   )
 }
 
-// テキストを /extract-tags に送信し、シーンと感情のタグを受け取る
+// テキストの送信とシーン・感情タグの取得
 export async function requestTags(text: string): Promise<Tags> {
   const response = await fetch(`${API_BASE_URL}/extract-tags`, {
     method: 'POST',

@@ -103,7 +103,7 @@ async function generate(model: string, prompt: string, seed: number): Promise<st
   return body.response.trim()
 }
 
-// 入力テキストから物語文を生成し、ルールに沿って整える
+// 物語文の生成と添削
 export async function generateStory(input: string, seed = 42): Promise<string> {
   const storyModel = process.env.OLLAMA_MODEL
   const polishModel = process.env.OLLAMA_POLISH_MODEL

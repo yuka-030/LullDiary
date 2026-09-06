@@ -7,7 +7,7 @@ if (!API_BASE_URL) {
   throw new Error('VITE_API_BASE_URL が設定されていません')
 }
 
-// WAV形式の音声データを /stt に送信し、テキスト化した結果を受け取る
+// WAV音声の送信と文字起こし結果の取得
 export async function requestTranscription(wav: ArrayBuffer): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/stt`, {
     method: 'POST',

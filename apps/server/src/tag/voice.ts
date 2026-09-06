@@ -20,7 +20,7 @@ const NEUTRAL_EMOTIONS = ['驚き']
 // 声が高ぶっている場合に加える感情
 const LIVELY_EMOTION = '嬉しい'
 
-// テキストから抽出した感情を、話し方をもとに補正する
+// 話し方に基づく感情タグの補正
 export function adjustEmotions<T extends string>(
   emotions: T[],
   profile: VoiceProfile

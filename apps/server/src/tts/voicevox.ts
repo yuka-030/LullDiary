@@ -68,7 +68,7 @@ export class VoicevoxError extends Error {
 
 // 誤読しやすい語の後ろへの区切りの挿入
 export function insertReadingBreaks(text: string): string {
-  // 長い語から先に照合する
+  // 文字数の降順の照合候補
   const words = [...SPLIT_AFTER_WORDS].sort((a, b) => b.length - a.length)
 
   let result = ''
@@ -86,7 +86,7 @@ export function insertReadingBreaks(text: string): string {
     result += matched
     index += matched.length
 
-    // 語の直後が漢字のときだけ区切る
+    // 対象語の直後が漢字の場合の読点挿入
     const next = text[index]
 
     if (next && /\p{Script=Han}/u.test(next)) {
@@ -120,7 +120,7 @@ function adjustLongVowels(moras: Mora[]): void {
       continue
     }
 
-    // ノイズが出やすい母音とそれ以外で倍率を切り替え
+    // 母音の種類に応じた長さの倍率の適用
     mora.vowel_length *= NOISY_VOWELS.includes(mora.vowel)
       ? NOISY_VOWEL_LENGTH_SCALE
       : LONG_VOWEL_LENGTH_SCALE
@@ -162,7 +162,7 @@ function interpolatePitches(moras: Mora[]): void {
       continue
     }
 
-    // 欠損が続く範囲の最後を探す
+    // ピッチ欠損区間の終端の探索
     let end = index
 
     while (end < moras.length && isBrokenPitch(moras[end])) {
@@ -172,7 +172,7 @@ function interpolatePitches(moras: Mora[]): void {
     const before = index > 0 ? moras[index - 1].pitch : null
     const after = end < moras.length ? moras[end].pitch : null
 
-    // 補間の基準が無い場合
+    // 補間基準がない区間のスキップ
     if (before === null && after === null) {
       index = end
       continue
@@ -182,7 +182,7 @@ function interpolatePitches(moras: Mora[]): void {
     const endPitch = after ?? (before as number)
     const steps = end - index + 1
 
-    // 欠損した範囲に補間値を入れる
+    // ピッチ欠損区間への補間値の設定
     for (let offset = 0; offset < end - index; offset += 1) {
       const ratio = (offset + 1) / steps
       moras[index + offset].pitch = startPitch + (endPitch - startPitch) * ratio
@@ -204,7 +204,7 @@ function smoothQuery(query: AudioQuery): AudioQuery {
   return query
 }
 
-// 物語文から読み上げ音声を生成する
+// 物語文の読み上げ音声の生成
 export async function synthesize(text: string): Promise<ArrayBuffer> {
   const readingText = insertReadingBreaks(text)
 

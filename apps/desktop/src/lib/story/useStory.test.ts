@@ -22,7 +22,7 @@ function createDeps(overrides: Partial<StoryDeps> = {}): StoryDeps {
 }
 
 beforeEach(() => {
-  // Blob URLの生成と解放をテスト環境で扱えるようにする
+  // Blob URLの生成・解放処理のテスト用の差し替え
   URL.createObjectURL = mock(() => 'blob:narration')
   URL.revokeObjectURL = mock(() => {})
 })

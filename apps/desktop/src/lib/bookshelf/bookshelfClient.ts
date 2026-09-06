@@ -17,7 +17,7 @@ export type UpdateEntryInput = {
   clearPhotos?: boolean
 }
 
-// 絞り込み条件を付けて日記の一覧を取得する
+// 絞り込み条件付きの日記一覧の取得
 export async function fetchEntries(filter: EntryFilter): Promise<Entry[]> {
   const params = new URLSearchParams()
 
@@ -42,7 +42,7 @@ export async function fetchEntries(filter: EntryFilter): Promise<Entry[]> {
   return body.entries as Entry[]
 }
 
-// 日記を更新する
+// 日記の更新
 export async function updateEntry(id: string, input: UpdateEntryInput): Promise<Entry> {
   const form = new FormData()
 
@@ -81,7 +81,7 @@ export async function updateEntry(id: string, input: UpdateEntryInput): Promise<
   return body.entry as Entry
 }
 
-// 日記を削除する
+// 日記の削除
 export async function deleteEntry(id: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/entries/${id}`, { method: 'DELETE' })
 

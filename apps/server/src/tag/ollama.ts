@@ -79,7 +79,7 @@ export class TagExtractionError extends Error {
   }
 }
 
-// 目安を「名前: 内容」の形に並べる
+// 選択の目安の「名前: 内容」形式への整形
 function formatHints(hints: Record<string, string>): string {
   return Object.entries(hints)
     .map(([name, hint]) => `${name}: ${hint}`)
@@ -107,7 +107,7 @@ ${formatHints(EMOTION_HINTS)}
 ${input}`
 }
 
-// モデルの出力からJSONを取り出し、スキーマで検証する
+// タグJSONの抽出とスキーマ検証
 export function parseTags(raw: string): Tags {
   const start = raw.indexOf('{')
   const end = raw.lastIndexOf('}')
@@ -121,7 +121,7 @@ export function parseTags(raw: string): Tags {
   return TagsSchema.parse(parsed)
 }
 
-// Ollamaにタグ抽出を依頼し、生の出力を受け取る
+// Ollamaへのタグ抽出要求と応答の取得
 async function requestTagsFromOllama(input: string): Promise<string> {
   const url = process.env.OLLAMA_URL
   const model = process.env.OLLAMA_TAG_MODEL
@@ -161,7 +161,7 @@ async function requestTagsFromOllama(input: string): Promise<string> {
   return body.response
 }
 
-// 入力テキストからタグを抽出する
+// 入力テキストからのタグ抽出
 export async function extractTags(input: string, options: ExtractTagsOptions = {}): Promise<Tags> {
   const { profile, maxAttempts = 3, requestTags = requestTagsFromOllama } = options
 

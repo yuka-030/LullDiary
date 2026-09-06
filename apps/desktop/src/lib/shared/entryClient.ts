@@ -23,7 +23,7 @@ export type CreateEntryInput = {
   photos?: File[]
 }
 
-// 日記エントリをサーバーに保存する
+// 日記エントリのサーバーへの保存
 export async function createEntry(input: CreateEntryInput): Promise<void> {
   const form = new FormData()
 

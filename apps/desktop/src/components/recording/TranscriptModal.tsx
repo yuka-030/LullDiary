@@ -7,9 +7,9 @@ const TYPING_INTERVAL_MS = 90
 type Props = {
   // STTが返した認識結果
   text: string
-  // 編集内容を確定して次に進む
+  // 編集内容の確定と次の処理への移行
   onConfirm: (text: string) => void
-  // 確定せずに閉じる
+  // 未確定でのモーダルの終了
   onCancel: () => void
 }
 
@@ -21,11 +21,13 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
   // 編集中のテキスト
   const [editedText, setEditedText] = useState(text)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const skipRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
-  // 演出がまだ終わっていないかどうか
+  // 文字表示の演出中フラグ
   const isTyping = displayedLength < text.length
 
-  // 一文字ずつ表示する
+  // 一文字ずつの表示
   useEffect(() => {
     if (!isTyping) {
       return
@@ -38,19 +40,61 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
     return () => clearTimeout(timer)
   }, [displayedLength, isTyping])
 
-  // 演出の完了後、テキストエリアにフォーカスを当てる
+  // 演出完了後のテキストエリアへのフォーカス移動
   useEffect(() => {
     if (!isTyping) {
       textareaRef.current?.focus()
     }
   }, [isTyping])
 
-  // 表示中の文字数を全体まで進める
+  // 表示時のモーダル内へのフォーカス移動
+  useEffect(() => {
+    skipRef.current?.focus()
+  }, [])
+
+  // Escapeキーでの終了とTabキーのフォーカス制御
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onCancel()
+        return
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) {
+        return
+      }
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>('button, [href], textarea, [tabindex]')
+      ).filter((element) => !element.matches(':disabled') && element.tabIndex >= 0)
+
+      if (focusable.length === 0) {
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
+  // 全文表示への切り替え
   function skipTyping() {
     setDisplayedLength(text.length)
   }
 
-  // EnterキーまたはSpaceキーで演出をスキップする
+  // Enterキー・Spaceキーでの演出のスキップ
   function handleSkipKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -67,6 +111,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
 
   return (
     <div
+      ref={dialogRef}
       className="bg-txt/30 fixed inset-0 z-50 flex items-center justify-center px-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
@@ -78,8 +123,9 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
         {/* 紙を模した領域 */}
         <div className="rounded-2xl bg-[#fffdf8] p-5 shadow-inner">
           {isTyping ? (
-            // 演出中はタップまたはキー操作でスキップできる
+            // 演出のスキップ用領域
             <div
+              ref={skipRef}
               role="button"
               tabIndex={0}
               onClick={skipTyping}
@@ -91,7 +137,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
               <span className="bg-txt2 ml-0.5 inline-block h-4 w-0.5 animate-pulse align-middle" />
             </div>
           ) : (
-            // 演出後は編集可能なテキストエリアに切り替わる
+            // 演出完了後の編集用テキストエリア
             <textarea
               ref={textareaRef}
               lang="ja"
@@ -112,7 +158,7 @@ export default function TranscriptModal({ text, onConfirm, onCancel }: Props) {
           <button
             type="button"
             onClick={onCancel}
-            className="font-body bg-bg2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full px-6 py-2 transition-colors hover:text-white"
+            className="font-body bg-white/20 text-txt2 hover:bg-txt2 cursor-pointer rounded-full px-6 py-2 transition-colors hover:text-white"
           >
             やめる
           </button>

@@ -47,10 +47,12 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
 
   return (
     <main className="bg-bg flex h-screen w-full flex-col items-center justify-center gap-6 px-6 py-8">
-      <p className="font-disp text-txt text-xl sm:text-2xl">今日は どんな１日だった？</p>
+      <p id="recording-prompt" className="font-disp text-txt text-xl sm:text-2xl">
+        今日は どんな１日だった？
+      </p>
 
       {/* 入力領域 */}
-      <div className="flex h-56 w-full max-w-md items-center justify-center">
+      <div className="relative top-6 flex h-56 w-full max-w-md items-center justify-center">
         {mode === 'voice' ? (
           <div className="relative flex h-56 w-56 items-center justify-center">
             {/* 録音中の波紋 */}
@@ -81,7 +83,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
               aria-label={isRecording ? '録音を停止する' : '録音を開始する'}
               onClick={toggleRecording}
               disabled={isProcessing || isRecorded}
-              className="relative h-full w-full cursor-pointer transition-transform hover:scale-105 disabled:opacity-60"
+              className="relative h-full w-full cursor-pointer rounded-3xl transition-transform hover:scale-105 disabled:opacity-60"
             >
               <HeartShape
                 className={`absolute inset-0 h-full w-full transition-colors ${
@@ -99,6 +101,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
           // テキスト入力欄
           <textarea
             lang="ja"
+            aria-labelledby="recording-prompt"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             className="font-body border-bg2 text-txt placeholder:text-txt2 focus:border-main h-full w-full resize-none rounded-3xl border-2 bg-white/60 p-5 focus:outline-none"
@@ -133,7 +136,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
               <button
                 type="button"
                 onClick={retryRecording}
-                className="font-body border-sub text-sub hover:bg-sub cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white"
+                className="font-body bg-white/20 border-sub text-sub hover:bg-sub cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white"
               >
                 録り直す
               </button>
@@ -184,7 +187,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
         type="button"
         onClick={toggleMode}
         disabled={isProcessing}
-        className="font-body border-sub text-sub hover:bg-sub flex cursor-pointer items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        className="font-body bg-white/20 border-sub text-sub hover:bg-sub flex cursor-pointer items-center gap-2 rounded-full border-2 px-6 py-2 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
         {mode === 'voice' ? <PencilIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />}
         {mode === 'voice' ? '文字で書く' : '声で話す'}

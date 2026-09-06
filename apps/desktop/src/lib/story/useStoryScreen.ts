@@ -8,7 +8,7 @@ import { useStory, type InputType } from './useStory'
 export type StoryStage = 'cover' | 'turning' | 'open'
 
 // 表紙を消すまでの時間
-const COVER_HIDE_MS = 1200
+const COVER_HIDE_MS = 2400
 
 // 閉じた本を表示する時間
 const COVER_SHOW_MS = 2000
@@ -61,10 +61,10 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
   const coverHideTimerRef = useRef<number | null>(null)
   const pageTimerRef = useRef<number | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
-  // 初回表示時の自動生成を一度だけ実行するための入力値
+  // 初回自動生成の対象入力値
   const generationInputRef = useRef<string | null>(null)
 
-  // 読み上げ音声の成否が決着してから見開きへ切り替える
+  // 読み上げ音声の生成終了後の見開き表示の判定
   const isReady = status === 'ready' && narrationStatus !== 'generating'
 
   const { displayedLength, isPaused, isTyping, togglePause, reset } = useAudioNarration({
@@ -137,7 +137,7 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     })
   }, [])
 
-  // 演出状態を初期化して生成開始
+  // 演出状態の初期化と生成の開始
   const startGeneration = useCallback(() => {
     clearTimers()
     reset()
@@ -152,7 +152,7 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     generate(inputText)
   }, [clearPhoto, clearTimers, generate, inputText, reset])
 
-  // 初回表示時に生成開始
+  // 初回表示時の生成の開始
   useEffect(() => {
     if (generationInputRef.current === inputText) {
       return
@@ -168,7 +168,7 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     }
   }, [clearPhoto, clearTimers, inputText, reset, startGeneration])
 
-  // 閉じた本を表示してから表紙を開く
+  // 閉じた本の表示と表紙を開く演出
   useEffect(() => {
     if (stage !== 'cover') {
       return
@@ -190,7 +190,7 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     }
   }, [stage])
 
-  // スライドインの途中で表紙を消す
+  // スライドイン中の表紙の非表示化
   useEffect(() => {
     if (stage !== 'turning') {
       return
@@ -208,7 +208,7 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     }
   }, [stage])
 
-  // ページめくりの進行を更新
+  // ページめくりの進行度の更新
   useEffect(() => {
     if (stage !== 'turning') {
       return
@@ -236,7 +236,7 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     }
   }, [stage])
 
-  // 生成完了時に見開き表示へ切り替え
+  // 生成完了時の見開き表示への切り替え
   useEffect(() => {
     if (!isReady) {
       return

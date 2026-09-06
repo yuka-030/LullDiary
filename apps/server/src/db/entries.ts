@@ -108,7 +108,7 @@ export function listEntries(filter: ListEntriesFilter = {}): Entry[] {
     params.push(filter.scene)
   }
 
-  // 指定した感情をすべて含む
+  // 指定した感情の全件一致条件
   for (const emotion of filter.emotions ?? []) {
     conditions.push("EXISTS (SELECT 1 FROM json_each(tags, '$.感情') WHERE json_each.value = ?)")
     params.push(emotion)

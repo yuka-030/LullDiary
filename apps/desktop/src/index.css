@@ -21,6 +21,16 @@ body {
   font-family: var(--font-body);
 }
 
+/* キーボード操作時のフォーカス表示 */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-txt2);
+}
+
 /* 待機中の光 */
 @keyframes glow-pulse {
   0% {
@@ -85,6 +95,7 @@ body {
   font-family: var(--font-body);
   font-size: 12px;
   border: none;
+  border-radius: 999px;
   background: none;
   cursor: pointer;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);
@@ -160,6 +171,7 @@ body {
   height: 14px;
   accent-color: var(--color-sub);
   cursor: pointer;
+  border-radius: 4px;
 }
 
 /* 本の外に出す見出し */
@@ -198,18 +210,34 @@ body {
 /* 閉じた本の配置枠 */
 .story-cover-stage {
   position: absolute;
-  top: 50%;
+  top: 46%;
   left: 50%;
-  width: min(42vw, 581px);
-  height: min(72vh, 562px);
+  width: min(34vw, 330px);
+  height: min(68vh, 500px);
   transform: translate(calc(-50% + 16vw), -50%);
   z-index: 10;
 }
 
 /* ページめくり中の表紙 */
 .story-cover-stage-behind {
+  top: 46%;
   z-index: 1;
   pointer-events: none;
+}
+
+/* ページ重なりの消去アニメーション */
+.story-cover-stage-behind .book-cover-pages {
+  animation: story-cover-pages-wipe-out 1.2s ease-in-out forwards;
+}
+
+@keyframes story-cover-pages-wipe-out {
+  0% {
+    clip-path: inset(0 0px 0px 0);
+  }
+
+  100% {
+    clip-path: inset(0 12px 18px 0);
+  }
 }
 
 .story-cover {
@@ -417,10 +445,10 @@ body {
 /* ページめくり中の本の配置枠 */
 .story-page-turning {
   position: absolute;
-  top: 50%;
+  top: 46%;
   left: 50%;
-  width: min(94vw, 1280px);
-  height: min(calc(100vh - 90px), 780px);
+  width: 97vw;
+  height: min(calc(100vh - 70px), 700px);
   z-index: 15;
   transform: translate(-50%, -50%);
   animation: story-page-turning-enter 2s cubic-bezier(0.33, 0, 0.2, 1) both;
@@ -608,17 +636,17 @@ body {
 /* 見開き本の配置枠 */
 .story-open-stage {
   position: absolute;
-  top: 50%;
+  top: 46%;
   left: 50%;
-  width: min(95vw, 1320px);
-  height: min(calc(100vh - 90px), 780px);
+  width: 97vw;
+  height: min(calc(100vh - 70px), 700px);
   transform: translate(-50%, -50%);
 }
 
 /* 詳細画面の見開きの配置枠 */
 .entry-detail-stage {
   top: 47%;
-  height: min(calc(100vh - 210px), 660px);
+  height: min(calc(100vh - 120px), 500px);
 }
 
 .story-open-book {
@@ -671,7 +699,7 @@ body {
   position: relative;
   width: 58%;
   height: 100%;
-  padding: 4% 0;
+  padding: calc(3% + 28px) 7% 4% 7%;
   box-sizing: border-box;
   background-color: var(--color-bg);
   background-image: repeating-linear-gradient(
@@ -683,8 +711,6 @@ body {
   );
   background-origin: content-box;
   background-clip: content-box;
-  padding-top: calc(3% + 28px);
-  padding-left: calc(4% + 15px);
   background-repeat: repeat-y;
   background-size: calc(100% + 45px) 28px;
   clip-path: polygon(0 1%, 99% 0, 100% 2%, 100% 98%, 99% 100%, 0 99%);
@@ -727,7 +753,7 @@ body {
   position: relative;
   width: 50%;
   height: 100%;
-  padding: 8% 2%;
+  padding: 8% 7%;
   margin-right: 10px;
   box-sizing: border-box;
   background-color: var(--color-bg);
@@ -802,7 +828,7 @@ body {
   font-size: 12px;
   border: none;
   border-radius: 999px;
-  background: none;
+  background: rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition:
     color 0.2s ease,
@@ -822,7 +848,7 @@ body {
 /* 操作ボタンの配置 */
 .story-actions {
   position: absolute;
-  bottom: 26px;
+  bottom: 10%;
   left: 50%;
   z-index: 20;
   display: flex;
@@ -835,14 +861,14 @@ body {
 
 /* 二段の操作ボタンの配置 */
 .story-actions-stacked {
-  bottom: 40px;
+  bottom: 5%;
   flex-direction: column;
   gap: 8px;
 }
 
 /* 編集中の操作ボタンの配置 */
 .story-actions-edit {
-  bottom: 76px;
+  bottom: 8%;
 }
 
 .story-actions-line {
@@ -866,7 +892,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 26px 24px;
+  padding: 26px 24px 5vh;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -917,9 +943,8 @@ body {
   border-color: var(--color-main);
 }
 
-.bookshelf-select:focus {
+.bookshelf-select:focus-visible {
   border-color: var(--color-main);
-  outline: none;
 }
 
 .bookshelf-filter-clear {
@@ -928,7 +953,7 @@ body {
   font-family: var(--font-body);
   font-size: 12px;
   border: none;
-  background: none;
+  background: rgba(255, 255, 255, 0.2);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -1063,11 +1088,11 @@ body {
 }
 
 /* 最下段の棚板 */
-.bookshelf-row:last-child {
+.bookshelf-row:last-of-type {
   padding-bottom: 0;
 }
 
-.bookshelf-row:last-child::after {
+.bookshelf-row:last-of-type::after {
   display: none;
 }
 
@@ -1090,10 +1115,10 @@ body {
   border-radius: 3px 3px 0 0;
   background: linear-gradient(
     to right,
-    rgba(74, 59, 49, 0.22) 0%,
-    var(--color-sub) 20%,
-    var(--color-sub) 76%,
-    rgba(74, 59, 49, 0.14) 100%
+    rgba(74, 59, 49, 0.18) 0%,
+    var(--color-sub) 8%,
+    var(--color-sub) 90.4%,
+    rgba(74, 59, 49, 0.12) 100%
   );
   cursor: pointer;
   transition:
@@ -1129,12 +1154,65 @@ body {
   font-size: 11px;
 }
 
-/* 本棚の操作ボタンの配置 */
+/* 本棚の下の操作領域 */
 .bookshelf-actions {
   display: flex;
+  width: 100%;
+  max-width: 900px;
+  flex-shrink: 0;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-top: 14px;
+}
+
+/* 本棚のページ操作 */
+.bookshelf-pagination {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* 本棚の左右中央のボタン */
+.bookshelf-side-button {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 2px solid var(--color-txt2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-txt2);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.bookshelf-side-button-prev {
+  left: -26px;
+}
+
+.bookshelf-side-button-next {
+  right: -26px;
+}
+
+.bookshelf-side-button:hover:not(:disabled) {
+  background: white;
+  color: var(--color-txt2);
+}
+
+.bookshelf-side-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 /* 日付リストのページ */
@@ -1189,6 +1267,7 @@ body {
   font-family: var(--font-body);
   text-align: left;
   border: none;
+  border-radius: 10px;
   background: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -1239,6 +1318,7 @@ body {
   font-size: 0.86rem;
   line-height: 28.2px;
   border: none;
+  border-radius: 24px;
   background: transparent;
   resize: none;
   scrollbar-width: none;
@@ -1246,10 +1326,6 @@ body {
 
 .entry-detail-text::-webkit-scrollbar {
   display: none;
-}
-
-.entry-detail-text:focus {
-  outline: none;
 }
 
 /* 詳細画面の右ページ */
@@ -1380,7 +1456,7 @@ body {
   font-size: 14px;
   border: 2px solid var(--color-txt2);
   border-radius: 999px;
-  background: none;
+  background: rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -1408,53 +1484,6 @@ body {
   background: var(--color-rec2);
 }
 
-/* 高さ800px以下、幅769px以上の画面 */
-@media (max-height: 800px) and (min-width: 769px) {
-  .story-cover-stage {
-    height: min(68vh, 500px);
-  }
-
-  .story-page-turning {
-    height: min(calc(100vh - 70px), 700px);
-  }
-
-  .story-open-stage {
-    height: min(calc(100vh - 70px), 700px);
-  }
-
-  .entry-detail-stage {
-    height: min(calc(100vh - 200px), 590px);
-  }
-}
-
-/* 幅1023px以下の画面 */
-@media (max-width: 1023px) {
-  .story-cover-stage {
-    right: 4%;
-    width: min(34vw, 330px);
-  }
-
-  .story-page-turning {
-    width: 97vw;
-    height: min(calc(100vh - 90px), 650px);
-  }
-
-  .story-open-stage {
-    width: 97vw;
-    height: min(calc(100vh - 90px), 650px);
-  }
-
-  .entry-detail-stage {
-    height: min(calc(100vh - 200px), 560px);
-  }
-
-  .story-left-page,
-  .story-right-page {
-    padding-left: 7%;
-    padding-right: 7%;
-  }
-}
-
 /* 幅768px以下の画面 */
 @media (max-width: 768px) {
   .story-cover-stage {
@@ -1477,10 +1506,6 @@ body {
   .story-open-stage {
     width: 104vw;
     height: min(calc(100vh - 110px), 520px);
-  }
-
-  .entry-detail-stage {
-    height: min(calc(100vh - 210px), 440px);
   }
 
   .book-outer-heading {
@@ -1567,10 +1592,6 @@ body {
   .story-open-stage {
     width: 108vw;
     height: min(calc(100vh - 105px), 430px);
-  }
-
-  .entry-detail-stage {
-    height: min(calc(100vh - 205px), 370px);
   }
 
   .story-book-content {

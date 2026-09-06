@@ -3,7 +3,7 @@
 // 差し替えアイコン
 export function SwapIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
         d="M4 9a8 8 0 0 1 13.5-4.5L20 7"
         stroke="currentColor"
@@ -39,7 +39,7 @@ export function SwapIcon({ className }: { className?: string }) {
 // ゴミ箱アイコン
 export function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M4 6h16" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
       <path
         d="M9 6V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V6"

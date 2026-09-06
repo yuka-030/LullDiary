@@ -59,7 +59,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
       {errorMessage && <p className="story-error">{errorMessage}</p>}
       {saveError && <p className="story-error">{saveError}</p>}
 
-      {/* 開いた表紙をスライドインの間だけ背面に残す */}
+      {/* スライドイン中の背面の表紙 */}
       {isCoverVisible && (stage === 'cover' || stage === 'turning') && (
         <div
           className={`story-cover-stage ${stage === 'turning' ? 'story-cover-stage-behind' : ''}`}
@@ -83,7 +83,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
         </div>
       )}
 
-      {/* ページめくり中の本を表示 */}
+      {/* ページめくり中の本 */}
       {stage === 'turning' && (
         <>
           <div className="story-page-turning">
@@ -102,7 +102,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
         </>
       )}
 
-      {/* 見開きページと操作ボタンを表示 */}
+      {/* 見開きページと操作ボタン */}
       {stage === 'open' && (
         <>
           <div className="story-open-stage">
@@ -136,6 +136,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
                     <div className="story-photo-controls">
                       <button
                         type="button"
+                        aria-label="写真を変更"
                         onClick={() => photoInputRef.current?.click()}
                         className="story-photo-control"
                       >
@@ -143,7 +144,12 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
                         変更
                       </button>
 
-                      <button type="button" onClick={clearPhoto} className="story-photo-control">
+                      <button
+                        type="button"
+                        aria-label="写真を削除"
+                        onClick={clearPhoto}
+                        className="story-photo-control"
+                      >
                         <TrashIcon className="story-photo-control-icon" />
                         削除
                       </button>
@@ -187,7 +193,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
               <button
                 type="button"
                 onClick={retryNarration}
-                className="font-body border-sub text-sub hover:bg-sub cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
+                className="font-body bg-white/20 border-sub text-sub text-sm hover:bg-sub cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
               >
                 音声をつくり直す
               </button>
@@ -196,7 +202,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
             <button
               type="button"
               onClick={startGeneration}
-              className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
+              className="font-body bg-white/20 border-txt2 text-txt2 text-sm hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 transition-colors hover:text-white"
             >
               {narrationStatus === 'error' ? '物語からつくり直す' : 'つくり直す'}
             </button>
@@ -206,7 +212,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
                 type="button"
                 onClick={save}
                 disabled={isSaving || !tags}
-                className="font-body bg-main hover:bg-glow cursor-pointer rounded-full px-8 py-2 text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                className="font-body bg-main hover:bg-glow cursor-pointer rounded-full px-6 py-2 border-2 border-main text-white text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isSaving ? '保存中…' : '保存する'}
               </button>

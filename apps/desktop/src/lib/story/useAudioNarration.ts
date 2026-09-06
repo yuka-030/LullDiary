@@ -7,7 +7,7 @@ type Options = {
   audioUrl: string | null
   // 文字送りの対象になる物語文
   storyText: string
-  // 再生と文字送りを開始してよいかどうか
+  // 再生と文字送りの開始許可
   isActive: boolean
   // 外部で保持している音声要素
   audioRef: React.RefObject<HTMLAudioElement | null>
@@ -45,7 +45,7 @@ export function useAudioNarration({
   const displayedLengthRef = useRef(0)
   // 再生開始済みフラグ
   const hasStartedPlaybackRef = useRef(false)
-  // 古い再生要求が状態を上書きしないための世代番号
+  // 再生要求の世代番号
   const playbackAttemptRef = useRef(0)
 
   const isTyping = displayedLength < storyText.length
@@ -58,7 +58,7 @@ export function useAudioNarration({
     }
   }, [])
 
-  // 音声再生位置の監視を停止する
+  // 音声再生位置の監視の停止
   const stopAnimationFrame = useCallback(() => {
     if (animationFrameRef.current !== null) {
       window.cancelAnimationFrame(animationFrameRef.current)
@@ -66,7 +66,7 @@ export function useAudioNarration({
     }
   }, [])
 
-  // 音声の再生位置から表示文字数を同期する
+  // 音声再生位置に応じた表示文字数の同期
   const syncDisplayedLength = useCallback(() => {
     const audio = audioRef.current
 
@@ -76,7 +76,7 @@ export function useAudioNarration({
 
     const currentTime = audio.currentTime
 
-    // VOICEVOXから取得した文字タイミングを優先する
+    // VOICEVOXの発話タイミングに基づく文字同期
     if (timings.length >= storyText.length) {
       let nextLength = 0
       let punctuationPause = 0
@@ -127,7 +127,7 @@ export function useAudioNarration({
     setDisplayedLength(nextLength)
   }, [audioRef, storyText, timings])
 
-  // 音声再生位置を毎フレーム監視する
+  // フレームごとの音声再生位置の監視
   const startAnimationFrame = useCallback(() => {
     stopAnimationFrame()
 
@@ -147,7 +147,7 @@ export function useAudioNarration({
     animationFrameRef.current = window.requestAnimationFrame(update)
   }, [audioRef, stopAnimationFrame, syncDisplayedLength])
 
-  // 音声を再生する
+  // 音声の再生
   const playAudio = useCallback(async () => {
     const audio = audioRef.current
 
@@ -166,7 +166,7 @@ export function useAudioNarration({
 
       setIsPaused(false)
 
-      // play() が成功してから文字同期を開始する
+      // 再生成功後の文字同期の開始
       syncDisplayedLength()
       startAnimationFrame()
 
@@ -201,7 +201,7 @@ export function useAudioNarration({
     setIsPaused(false)
   }, [audioRef, stopAnimationFrame, stopFallbackInterval])
 
-  // 音声と文字送りの再生・停止を切り替える
+  // 音声と文字送りの再生・停止の切り替え
   const togglePause = useCallback(() => {
     const audio = audioRef.current
 
@@ -220,7 +220,7 @@ export function useAudioNarration({
       return
     }
 
-    // 再生要求中の処理も無効化してから停止する
+    // 再生要求の無効化と再生の停止
     playbackAttemptRef.current += 1
     audio.pause()
     stopAnimationFrame()
@@ -290,14 +290,14 @@ export function useAudioNarration({
     audio.currentTime = 0
     audio.load()
 
-    // 音声が実際に再生されるまで文字は表示しない
+    // 再生開始前の表示文字数の初期化
     displayedLengthRef.current = 0
     setDisplayedLength(0)
     setIsPaused(true)
 
     let isCleanedUp = false
 
-    // 音声の読み込み完了後に自動再生する
+    // 音声読み込み完了後の自動再生
     const handleReady = () => {
       if (isCleanedUp || attempt !== playbackAttemptRef.current) {
         return
@@ -309,7 +309,7 @@ export function useAudioNarration({
     audio.addEventListener('loadedmetadata', handleReady)
     audio.addEventListener('canplay', handleReady)
 
-    // すでに読み込み済みの場合にも自動再生する
+    // 読み込み済み音声の自動再生
     if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
       handleReady()
     }
@@ -326,7 +326,7 @@ export function useAudioNarration({
     }
   }, [audioRef, audioUrl, isActive, playAudio, stopAnimationFrame, storyText])
 
-  // 音声の再生状態と文字表示を同期する
+  // 音声の再生状態と文字表示の同期
   useEffect(() => {
     const audio = audioRef.current
 
@@ -337,7 +337,7 @@ export function useAudioNarration({
     function handlePlay() {
       setIsPaused(false)
 
-      // playイベントが発火した時点から文字同期を開始する
+      // playイベント時の文字同期の開始
       syncDisplayedLength()
       startAnimationFrame()
     }

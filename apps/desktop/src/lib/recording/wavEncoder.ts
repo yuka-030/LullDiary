@@ -1,11 +1,6 @@
 // apps/desktop/src/lib/recording/wavEncoder.ts
 
-/**
- * Web Audio APIで取得したPCMデータ(Float32Array)を、
- * 16bit PCM WAV形式のArrayBufferにエンコードする。
- * whisper.cppなど後続処理との相性を優先し、
- * サンプリングレートは録音時の値をそのまま使う。
- */
+// PCMデータの16bit PCM WAV形式への変換
 export function encodeWav(samples: Float32Array, sampleRate: number): ArrayBuffer {
   const numChannels = 1
   const bytesPerSample = 2

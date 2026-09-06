@@ -1,5 +1,7 @@
 // apps/desktop/src/components/bookshelf/BookSpine.tsx
 type Props = {
+  // 背表紙の対象年
+  year: number
   // 背表紙に表示する月
   monthNumber: number
   // 本の高さの変化(0〜1)
@@ -8,10 +10,11 @@ type Props = {
   onSelect: () => void
 }
 
-export default function BookSpine({ monthNumber, variant, onSelect }: Props) {
+export default function BookSpine({ year, monthNumber, variant, onSelect }: Props) {
   return (
     <button
       type="button"
+      aria-label={`${year}年${monthNumber}月の日記を開く`}
       onClick={onSelect}
       className="book-spine"
       style={
