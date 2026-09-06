@@ -18,7 +18,7 @@ function App() {
   // 本棚の再取得を促す値
   const [bookshelfKey, setBookshelfKey] = useState(0)
 
-  // 日付リストを開いた状態で本棚へ戻る
+  // 日付リストを開いた本棚へ戻る
   function handleBackToDates() {
     setSelectedEntry(null)
     setBookshelfKey((key) => key + 1)

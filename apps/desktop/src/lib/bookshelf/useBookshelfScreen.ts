@@ -5,7 +5,7 @@ import type { Entry, EntryFilter as Filter, MonthlyBook } from './entryTypes'
 import { collectYears, groupByMonth } from './entryTypes'
 
 // 見開き1ページあたりの日付の数
-const DATES_PER_PAGE = 7
+const DATES_PER_PAGE = 9
 
 // 一度に表示する段の数
 const SHELVES_PER_PAGE = 3
@@ -112,24 +112,24 @@ export function useBookshelfScreen({ initialMonth }: Options) {
     setShelfPage((page) => (page < shelfPages.length ? page : 0))
   }, [shelfPages.length])
 
-  // 本を開く
+  // 本を開く操作
   const openBook = useCallback((book: MonthlyBook) => {
     setOpenedMonth(book.month)
     setDatePage(0)
   }, [])
 
-  // 本を閉じる
+  // 本を閉じる操作
   const closeBook = useCallback(() => {
     setOpenedMonth(null)
     setDatePage(0)
   }, [])
 
-  // 本棚の前のページへ
+  // 本棚の前ページへの切り替え
   const goToPreviousShelfPage = useCallback(() => {
     setShelfPage((page) => Math.max(0, page - 1))
   }, [])
 
-  // 本棚の次のページへ
+  // 本棚の次ページへの切り替え
   const goToNextShelfPage = useCallback(() => {
     setShelfPage((page) => Math.min(shelfPages.length - 1, page + 1))
   }, [shelfPages.length])
@@ -145,12 +145,12 @@ export function useBookshelfScreen({ initialMonth }: Options) {
     }
   }
 
-  // 日付リストの前のページへ
+  // 日付リストの前ページへの切り替え
   const goToPreviousDatePage = useCallback(() => {
     setDatePage((page) => Math.max(0, page - 1))
   }, [])
 
-  // 日付リストの次のページへ
+  // 日付リストの次ページへの切り替え
   const goToNextDatePage = useCallback(() => {
     setDatePage((page) => Math.min(datePages.length - 1, page + 1))
   }, [datePages.length])

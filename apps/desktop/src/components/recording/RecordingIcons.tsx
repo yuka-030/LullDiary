@@ -21,7 +21,7 @@ export function HeartShape({
 // マイクアイコン
 export function MicIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
         d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"
         stroke="currentColor"
@@ -40,7 +40,7 @@ export function MicIcon({ className }: { className?: string }) {
 // 停止アイコン
 export function StopIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <rect x="7" y="7" width="10" height="10" rx="2.5" fill="currentColor" />
     </svg>
   )
@@ -49,7 +49,7 @@ export function StopIcon({ className }: { className?: string }) {
 // 鉛筆アイコン
 export function PencilIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path
         d="M4 20h4L18.5 9.5a2.121 2.121 0 0 0-3-3L5 17v3Z"
         stroke="currentColor"

@@ -5,9 +5,9 @@ type Props = {
   className?: string
   // ページがめくれる進行度(0〜1)
   pageProgress: number
-  // 左ページの罫線を表示するかどうか
+  // 左ページの罫線の表示有無
   showLeftLines?: boolean
-  // 右ページの罫線を表示するかどうか
+  // 右ページの罫線の表示有無
   showRightLines?: boolean
 }
 

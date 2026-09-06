@@ -63,7 +63,7 @@ export default function EntryDetailScreen({
     remove,
   } = useEntryDetail({ entry, onDeleted })
 
-  // 写真を選択する
+  // 写真の選択
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
 
@@ -96,6 +96,7 @@ export default function EntryDetailScreen({
             {isEditing ? (
               <textarea
                 lang="ja"
+                aria-label="物語文"
                 value={storyText}
                 onChange={(e) => changeStoryText(e.target.value)}
                 className="entry-detail-text"
@@ -147,6 +148,7 @@ export default function EntryDetailScreen({
               <div className="story-photo-controls">
                 <button
                   type="button"
+                  aria-label="写真を変更"
                   onClick={() => photoInputRef.current?.click()}
                   className="story-photo-control"
                 >
@@ -154,7 +156,12 @@ export default function EntryDetailScreen({
                   変更
                 </button>
 
-                <button type="button" onClick={removePhoto} className="story-photo-control">
+                <button
+                  type="button"
+                  aria-label="写真を削除"
+                  onClick={removePhoto}
+                  className="story-photo-control"
+                >
                   <TrashIcon className="story-photo-control-icon" />
                   削除
                 </button>
@@ -166,6 +173,8 @@ export default function EntryDetailScreen({
                 <button
                   ref={sceneButtonRef}
                   type="button"
+                  aria-expanded={openMenu === 'scene'}
+                  aria-controls={openMenu === 'scene' ? 'entry-tag-options' : undefined}
                   onClick={() => toggleMenu('scene', sceneButtonRef.current)}
                   className="bookshelf-select entry-detail-select"
                 >
@@ -175,6 +184,8 @@ export default function EntryDetailScreen({
                 <button
                   ref={emotionButtonRef}
                   type="button"
+                  aria-expanded={openMenu === 'emotion'}
+                  aria-controls={openMenu === 'emotion' ? 'entry-tag-options' : undefined}
                   onClick={() => toggleMenu('emotion', emotionButtonRef.current)}
                   className="bookshelf-select entry-detail-select"
                 >
@@ -201,6 +212,7 @@ export default function EntryDetailScreen({
         openMenu !== null &&
         createPortal(
           <div
+            id="entry-tag-options"
             ref={menuRef}
             className="option-menu option-menu-floating"
             style={{ top: menuPosition.top, left: menuPosition.left }}
@@ -210,6 +222,7 @@ export default function EntryDetailScreen({
                   <button
                     key={scene}
                     type="button"
+                    aria-pressed={tags.シーン === scene}
                     onClick={() => selectScene(scene)}
                     className={`option-menu-item ${
                       tags.シーン === scene ? 'option-menu-item-active' : ''
@@ -239,7 +252,7 @@ export default function EntryDetailScreen({
             type="button"
             onClick={cancelEditing}
             disabled={isSaving}
-            className="font-body border-txt2 text-txt2 hover:bg-txt2 entry-detail-action cursor-pointer rounded-full border-2 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="font-body bg-white/20 border-txt2 text-txt2 hover:bg-txt2 entry-detail-action cursor-pointer rounded-full border-2 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             やめる
           </button>
@@ -248,7 +261,7 @@ export default function EntryDetailScreen({
             type="button"
             onClick={save}
             disabled={isSaving}
-            className="font-body bg-main hover:bg-glow entry-detail-action cursor-pointer rounded-full py-2 text-sm text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            className="font-body bg-main hover:bg-glow entry-detail-action cursor-pointer rounded-full py-2 border-2 border-main text-sm text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSaving ? '保存中…' : '保存する'}
           </button>
@@ -261,7 +274,7 @@ export default function EntryDetailScreen({
             <button
               type="button"
               onClick={startEditing}
-              className="font-body border-main text-main hover:bg-main cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white"
+              className="font-body bg-white/20 border-main text-main hover:bg-main cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white"
             >
               編集する
             </button>
@@ -270,7 +283,7 @@ export default function EntryDetailScreen({
               type="button"
               onClick={showDeleteConfirm}
               disabled={isDeleting}
-              className="font-body border-rec text-rec hover:bg-rec cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="font-body bg-white/20 border-rec text-rec hover:bg-rec cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               削除する
             </button>

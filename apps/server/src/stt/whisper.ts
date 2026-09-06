@@ -13,7 +13,7 @@ const WHISPER_CLI =
 // モデルファイルのパス
 const MODEL_FILE = path.join('models', 'ggml-small.bin')
 
-// 句読点付きの出力を促すためのヒント
+// 句読点付きの認識用例文
 const INITIAL_PROMPT = '今日は、天気が良くて、公園に行きました。楽しかったです。'
 
 // 探索する候補の数
@@ -29,12 +29,12 @@ export class WhisperError extends Error {
   }
 }
 
-// WAV形式の音声データをテキスト化する
+// WAV音声の文字起こし
 export async function transcribe(audio: ArrayBuffer): Promise<string> {
   const tempPath = path.join(tmpdir(), `lulldiary-${Date.now()}.wav`)
 
   try {
-    // 一時ファイルに書き出してから渡す
+    // 音声データの一時保存
     await Bun.write(tempPath, audio)
 
     const proc = Bun.spawn(
@@ -74,7 +74,7 @@ export async function transcribe(audio: ArrayBuffer): Promise<string> {
 
     return stdout.trim()
   } finally {
-    // 一時ファイルは成否にかかわらず削除する
+    // 一時ファイルの削除
     await unlink(tempPath).catch(() => {})
   }
 }

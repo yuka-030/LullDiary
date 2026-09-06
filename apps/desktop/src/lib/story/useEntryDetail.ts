@@ -26,7 +26,7 @@ function normalizeStoryText(text: string): string {
 }
 
 export function useEntryDetail({ entry, onDeleted }: Options) {
-  // 編集中かどうか
+  // 編集状態
   const [isEditing, setIsEditing] = useState(false)
   const [storyText, setStoryText] = useState(normalizeStoryText(entry.story_text))
   const [tags, setTags] = useState(entry.tags)
@@ -183,7 +183,7 @@ export function useEntryDetail({ entry, onDeleted }: Options) {
     setTags((previous) => {
       const selected = previous.感情.includes(emotion)
 
-      // きもちは1つ以上必要
+      // きもちの最後の1件の選択解除の防止
       if (selected && previous.感情.length === 1) {
         return previous
       }

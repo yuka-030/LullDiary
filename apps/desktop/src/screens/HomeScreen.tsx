@@ -15,7 +15,7 @@ export default function HomeScreen({ onStartRecording, onOpenBookshelf }: Props)
         <p className="font-body text-txt2 text-sm sm:text-base">あなたの声が物語になる日記</p>
       </div>
 
-      <div className="flex items-start justify-center gap-10 sm:gap-16">
+      <div className="relative -top-4 flex items-start justify-center gap-10 sm:gap-16">
         {/* ボタン:物語をつくる */}
         <div className="flex flex-col items-center gap-3">
           <button
@@ -89,7 +89,7 @@ function BookshelfShape({ className }: { className?: string }) {
       <path d="M48 30H55C56 30 57 31 57 32V50H46V32C46 31 47 30 48 30Z" fill="currentColor" />
       <path d="M48 35H55V38H48V35Z" fill="currentColor" opacity="0.35" />
 
-      <path d="M63 34L70 32L76 50H66L63 34Z" fill="currentColor" opacity="0.6" />
+      <path d="M57 34L64 32L70 50H60L57 34Z" fill="currentColor" opacity="0.6" />
 
       {/* 下段の本 */}
       <path

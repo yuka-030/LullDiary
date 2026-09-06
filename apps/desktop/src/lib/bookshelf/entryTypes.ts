@@ -48,7 +48,7 @@ export type MonthlyBook = {
   entries: Entry[]
 }
 
-// 日記を月ごとにまとめる
+// 日記の月別グループ化
 export function groupByMonth(entries: Entry[]): MonthlyBook[] {
   const books = new Map<string, Entry[]>()
 
@@ -73,7 +73,7 @@ export function groupByMonth(entries: Entry[]): MonthlyBook[] {
     .sort((a, b) => a.month.localeCompare(b.month))
 }
 
-// 日記のある年を新しい順に取り出す
+// 日記のある年の降順での取得
 export function collectYears(books: MonthlyBook[]): number[] {
   return [...new Set(books.map((book) => book.year))].sort((a, b) => b - a)
 }

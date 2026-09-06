@@ -108,7 +108,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
               type="button"
               onClick={goToPreviousDatePage}
               disabled={isFirstDatePage}
-              className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="font-body bg-white/20 border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               前のページ
             </button>
@@ -121,7 +121,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
               type="button"
               onClick={goToNextDatePage}
               disabled={isLastDatePage}
-              className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="font-body bg-white/20 border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               次のページ
             </button>
@@ -155,6 +155,7 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
             {shelf?.books.map((book, bookIndex) => (
               <BookSpine
                 key={book.month}
+                year={book.year}
                 monthNumber={book.monthNumber}
                 variant={(bookIndex % 3) / 2}
                 onSelect={() => openBook(book)}
@@ -162,21 +163,73 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
             ))}
           </div>
         ))}
-      </div>
 
-      <div className="bookshelf-actions">
+        {/* 本棚の左右の切り替えボタン */}
         {shelfPageCount > 1 && (
           <>
             <button
               type="button"
               onClick={goToPreviousShelfPage}
               disabled={isFirstShelfPage}
-              className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-5 py-1.5 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="前の本棚"
+              className="bookshelf-side-button bookshelf-side-button-prev"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="m14 6-6 6 6 6" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={goToNextShelfPage}
+              disabled={isLastShelfPage}
+              aria-label="次の本棚"
+              className="bookshelf-side-button bookshelf-side-button-next"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="m10 6 6 6-6 6" />
+              </svg>
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="bookshelf-actions">
+        {/* 本棚の下のページ操作 */}
+        {shelfPageCount > 1 && (
+          <div className="bookshelf-pagination">
+            <button
+              type="button"
+              onClick={goToPreviousShelfPage}
+              disabled={isFirstShelfPage}
+              className="font-body bg-white/20 border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               前の本棚
             </button>
 
-            <span className="font-body text-txt2 text-sm">
+            <span className="font-body text-txt2 text-sm" aria-live="polite" aria-atomic="true">
               {shelfPage + 1} / {shelfPageCount}
             </span>
 
@@ -184,11 +237,11 @@ export default function BookshelfScreen({ initialMonth, onBack, onSelectEntry }:
               type="button"
               onClick={goToNextShelfPage}
               disabled={isLastShelfPage}
-              className="font-body border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-5 py-1.5 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="font-body bg-white/20 border-txt2 text-txt2 hover:bg-txt2 cursor-pointer rounded-full border-2 px-6 py-2 text-sm transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               次の本棚
             </button>
-          </>
+          </div>
         )}
 
         <button type="button" onClick={onBack} className="back-link">

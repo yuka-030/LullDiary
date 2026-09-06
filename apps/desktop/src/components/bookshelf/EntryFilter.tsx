@@ -125,6 +125,8 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
         <button
           ref={yearButtonRef}
           type="button"
+          aria-expanded={openMenu === 'year'}
+          aria-controls={openMenu === 'year' ? 'bookshelf-filter-options' : undefined}
           onClick={() => toggleMenu('year', yearButtonRef.current)}
           className="bookshelf-select"
         >
@@ -134,6 +136,8 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
         <button
           ref={monthButtonRef}
           type="button"
+          aria-expanded={openMenu === 'month'}
+          aria-controls={openMenu === 'month' ? 'bookshelf-filter-options' : undefined}
           onClick={() => toggleMenu('month', monthButtonRef.current)}
           className="bookshelf-select"
         >
@@ -145,6 +149,9 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
         <button
           ref={sceneButtonRef}
           type="button"
+          aria-label={`どこで：${filter.scene ?? 'すべて'}`}
+          aria-expanded={openMenu === 'scene'}
+          aria-controls={openMenu === 'scene' ? 'bookshelf-filter-options' : undefined}
           onClick={() => toggleMenu('scene', sceneButtonRef.current)}
           className="bookshelf-select"
         >
@@ -156,6 +163,11 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
         <button
           ref={emotionButtonRef}
           type="button"
+          aria-label={`きもち：${
+            filter.emotions.length === 0 ? 'えらぶ' : `${filter.emotions.length}つ えらんだ`
+          }`}
+          aria-expanded={openMenu === 'emotion'}
+          aria-controls={openMenu === 'emotion' ? 'bookshelf-filter-options' : undefined}
           onClick={() => toggleMenu('emotion', emotionButtonRef.current)}
           className="bookshelf-select"
         >
@@ -176,20 +188,24 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
             <button
               key={emotion}
               type="button"
+              aria-label={`${emotion}の絞り込みを解除`}
               onClick={() => toggleEmotion(emotion)}
               className="bookshelf-emotion-tag"
             >
               {emotion}
-              <span className="bookshelf-emotion-remove">×</span>
+              <span className="bookshelf-emotion-remove" aria-hidden="true">
+                ×
+              </span>
             </button>
           ))}
         </div>
       )}
 
-      {/* 候補を画面の上に描画 */}
+      {/* 画面上の選択候補 */}
       {openMenu !== null &&
         createPortal(
           <div
+            id="bookshelf-filter-options"
             ref={menuRef}
             className="option-menu option-menu-floating"
             style={{ top: menuPosition.top, left: menuPosition.left }}
@@ -198,6 +214,7 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
               <>
                 <button
                   type="button"
+                  aria-pressed={filter.year === undefined}
                   onClick={() => selectYear(undefined)}
                   className={`option-menu-item ${
                     filter.year === undefined ? 'option-menu-item-active' : ''
@@ -210,6 +227,7 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
                   <button
                     key={year}
                     type="button"
+                    aria-pressed={filter.year === year}
                     onClick={() => selectYear(year)}
                     className={`option-menu-item ${
                       filter.year === year ? 'option-menu-item-active' : ''
@@ -225,6 +243,7 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
               <>
                 <button
                   type="button"
+                  aria-pressed={filter.month === undefined}
                   onClick={() => selectMonth(undefined)}
                   className={`option-menu-item ${
                     filter.month === undefined ? 'option-menu-item-active' : ''
@@ -237,6 +256,7 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
                   <button
                     key={month}
                     type="button"
+                    aria-pressed={filter.month === month}
                     onClick={() => selectMonth(month)}
                     className={`option-menu-item ${
                       filter.month === month ? 'option-menu-item-active' : ''
@@ -252,6 +272,7 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
               <>
                 <button
                   type="button"
+                  aria-pressed={filter.scene === undefined}
                   onClick={() => selectScene(undefined)}
                   className={`option-menu-item ${
                     filter.scene === undefined ? 'option-menu-item-active' : ''
@@ -264,6 +285,7 @@ export default function EntryFilter({ filter, years, onChange }: Props) {
                   <button
                     key={scene}
                     type="button"
+                    aria-pressed={filter.scene === scene}
                     onClick={() => selectScene(scene)}
                     className={`option-menu-item ${
                       filter.scene === scene ? 'option-menu-item-active' : ''

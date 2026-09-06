@@ -100,7 +100,7 @@ afterEach(() => {
   })
 })
 
-// 指定した秒数だけ経過させる
+// 指定秒数の経過
 async function advanceSeconds(seconds: number) {
   for (let count = 0; count < seconds; count += 1) {
     const handlers = [...intervalHandlers.values()]
@@ -292,7 +292,7 @@ describe('useRecordingFlow', () => {
   test('録音していないときの切り替えでは停止処理を呼ばない', async () => {
     const { result } = renderHook(() => useRecordingFlow({ onBack: () => {}, onSaved: () => {} }))
 
-    // 録音を始めずに入力方法を切り替え
+    // 録音開始前の入力方法の切り替え
     await act(async () => {
       await result.current.toggleMode()
     })

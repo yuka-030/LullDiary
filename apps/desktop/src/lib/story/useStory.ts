@@ -55,7 +55,7 @@ export function useStory(deps: StoryDeps = defaultDeps) {
     setAudioUrl(null)
   }, [])
 
-  // 物語文から読み上げ音声を生成する
+  // 物語文の読み上げ音声の生成
   const startNarration = useCallback(
     async (text: string) => {
       const narrationId = ++narrationIdRef.current
@@ -91,7 +91,7 @@ export function useStory(deps: StoryDeps = defaultDeps) {
     [clearNarration]
   )
 
-  // 確定したテキストから物語・タグを生成し、読み上げ音声を並行して生成する
+  // 物語文・タグ・読み上げ音声の生成
   const generate = useCallback(
     async (input: string) => {
       const generationId = ++generationIdRef.current
