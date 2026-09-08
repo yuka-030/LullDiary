@@ -1,6 +1,7 @@
 // apps/server/src/db/entrySchema.ts
 import { z } from 'zod'
 import { TAG_OPTIONS } from '../tag/ollama'
+import { validateTextInput } from '../validation/textInput'
 
 // タグの検証スキーマ
 const TagsSchema = z.object({
@@ -9,12 +10,24 @@ const TagsSchema = z.object({
 })
 
 // POST /entries のテキストフィールド
-export const CreateEntryFieldsSchema = z.object({
-  input_type: z.enum(['voice', 'text']),
-  raw_input_text: z.string().min(1),
-  story_text: z.string().min(1),
-  tags: TagsSchema,
-})
+export const CreateEntryFieldsSchema = z
+  .object({
+    input_type: z.enum(['voice', 'text']),
+    raw_input_text: z.string().min(1),
+    story_text: z.string().min(1),
+    tags: TagsSchema,
+  })
+  .superRefine((value, context) => {
+    if (value.input_type !== 'text') {
+      return
+    }
+
+    const error = validateTextInput(value.raw_input_text)
+
+    if (error) {
+      context.addIssue({ code: 'custom', path: ['raw_input_text'], message: error })
+    }
+  })
 
 // PATCH /entries/:id のテキストフィールド
 export const UpdateEntryFieldsSchema = z.object({

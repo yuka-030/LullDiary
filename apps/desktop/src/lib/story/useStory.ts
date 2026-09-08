@@ -11,7 +11,7 @@ export type InputType = 'voice' | 'text'
 
 // 差し替え可能な生成処理
 export type StoryDeps = {
-  requestStory: (text: string) => Promise<string>
+  requestStory: (text: string, inputType: InputType) => Promise<string>
   requestNarration: (text: string) => Promise<ArrayBuffer>
   requestTags: (text: string) => Promise<Tags>
 }
@@ -93,7 +93,7 @@ export function useStory(deps: StoryDeps = defaultDeps) {
 
   // 物語文・タグ・読み上げ音声の生成
   const generate = useCallback(
-    async (input: string) => {
+    async (input: string, inputType: InputType = 'text') => {
       const generationId = ++generationIdRef.current
 
       // 進行中の読み上げ音声生成の無効化
@@ -107,7 +107,7 @@ export function useStory(deps: StoryDeps = defaultDeps) {
       clearNarration()
 
       try {
-        const story = await depsRef.current.requestStory(input)
+        const story = await depsRef.current.requestStory(input, inputType)
 
         // 古い生成結果の判定
         if (generationId !== generationIdRef.current) {

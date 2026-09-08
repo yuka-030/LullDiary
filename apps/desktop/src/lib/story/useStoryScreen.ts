@@ -149,8 +149,8 @@ export function useStoryScreen({ inputText, inputType, onSave }: Options) {
     setIsCoverVisible(true)
     setSaveError(null)
 
-    generate(inputText)
-  }, [clearPhoto, clearTimers, generate, inputText, reset])
+    generate(inputText, inputType)
+  }, [clearPhoto, clearTimers, generate, inputText, inputType, reset])
 
   // 初回表示時の生成の開始
   useEffect(() => {

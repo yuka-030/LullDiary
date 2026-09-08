@@ -17,7 +17,7 @@ import {
 import { migrate } from './db/migrate'
 import { narrationPath, photoPath, removeMedia, removePhotos } from './media/paths'
 import { saveNarration, savePhotos } from './media/save'
-import { generateStory, OllamaError } from './story/ollama'
+import { createStoryRoute } from './story/storyRoute'
 import { transcribe, WhisperError } from './stt/whisper'
 import { extractTags, TagExtractionError } from './tag/ollama'
 import type { VoiceProfile } from './tag/voice'
@@ -32,11 +32,6 @@ if (!VOICEVOX_URL) {
 
 // 暁記ミタマ ノーマル
 const SPEAKER_ID = 122
-
-// 物語生成リクエスト
-type GenerateStoryRequest = {
-  text?: unknown
-}
 
 // タグ抽出リクエスト
 type ExtractTagsRequest = {
@@ -360,25 +355,7 @@ app.post('/stt', async (c) => {
 })
 
 // 物語の生成
-app.post('/generate-story', async (c) => {
-  const body = (await c.req.json().catch(() => null)) as GenerateStoryRequest | null
-
-  if (!body || typeof body.text !== 'string' || body.text.trim().length === 0) {
-    return c.json({ error: '入力テキストが空です' }, 400)
-  }
-
-  try {
-    const storyText = await generateStory(body.text, Date.now())
-
-    return c.json({ story_text: storyText }, 200)
-  } catch (err) {
-    if (err instanceof OllamaError) {
-      return c.json({ error: err.message }, 500)
-    }
-
-    return c.json({ error: '物語の生成に失敗しました' }, 500)
-  }
-})
+app.route('/', createStoryRoute())
 
 // タグの抽出
 app.post('/extract-tags', async (c) => {
