@@ -1,5 +1,6 @@
 // apps/desktop/src/lib/story/storyClient.ts
 import type { Tags } from '../shared/entryClient'
+import type { InputType } from './useStory'
 
 // ローカルAPIサーバー(Hono)のベースURL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -16,11 +17,11 @@ export type NarrationTiming = {
 }
 
 // 確定テキストの送信と物語文の取得
-export async function requestStory(text: string): Promise<string> {
+export async function requestStory(text: string, inputType: InputType): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/generate-story`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, input_type: inputType }),
   })
 
   if (!response.ok) {

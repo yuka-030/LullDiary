@@ -78,6 +78,18 @@ textarea:focus-visible,
   animation: text-fade 5s ease-in-out infinite;
 }
 
+/* テキスト入力欄の内側のフォーカス表示 */
+textarea.recording-textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* テキスト入力のエラーメッセージ */
+.recording-text-error {
+  color: #b3261e;
+  font-weight: 600;
+}
+
 /* 残り時間のドット */
 .recording-dot {
   display: block;

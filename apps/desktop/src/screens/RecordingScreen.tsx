@@ -1,6 +1,7 @@
 // apps/desktop/src/screens/RecordingScreen.tsx
 import { HeartShape, MicIcon, PencilIcon, StopIcon } from '../components/recording/RecordingIcons'
 import TranscriptModal from '../components/recording/TranscriptModal'
+import { TEXT_INPUT_LIMIT } from '../lib/recording/textInput'
 import { RECORDING_DOT_COUNT, useRecordingFlow } from '../lib/recording/useRecordingFlow'
 import StoryScreen from './StoryScreen'
 
@@ -16,6 +17,9 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
     mode,
     inputText,
     setInputText,
+    inputCharacterCount,
+    textInputError,
+    setIsTextComposing,
     confirmedText,
     confirmedMode,
     isRecording,
@@ -99,14 +103,33 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
           </div>
         ) : (
           // テキスト入力欄
-          <textarea
-            lang="ja"
-            aria-labelledby="recording-prompt"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            className="font-body border-bg2 text-txt placeholder:text-txt2 focus:border-main h-full w-full resize-none rounded-3xl border-2 bg-white/60 p-5 focus:outline-none"
-            placeholder="今日あったことを書いてみてね"
-          />
+          <div className="font-body border-bg2 focus-within:border-main flex h-full w-full flex-col gap-2 rounded-3xl border-2 bg-white/60 p-5">
+            <p id="text-input-guide" className="text-txt2 shrink-0 text-xs">
+              今日あったことを書いてみてね
+            </p>
+            <textarea
+              lang="ja"
+              aria-labelledby="recording-prompt"
+              aria-describedby={`text-input-guide text-input-count${textInputError ? ' text-input-error' : ''}`}
+              aria-invalid={Boolean(textInputError)}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onCompositionStart={() => setIsTextComposing(true)}
+              onCompositionEnd={(e) => {
+                setInputText(e.currentTarget.value)
+                setIsTextComposing(false)
+              }}
+              className="recording-textarea text-txt min-h-0 w-full flex-1 resize-none bg-transparent focus:outline-none"
+            />
+            <div className="flex shrink-0 items-end justify-between gap-2 text-xs">
+              <p id="text-input-error" className="recording-text-error" aria-live="polite">
+                {textInputError}
+              </p>
+              <span id="text-input-count" className="text-txt ml-auto whitespace-nowrap">
+                {inputCharacterCount} / {TEXT_INPUT_LIMIT}字
+              </span>
+            </div>
+          </div>
         )}
       </div>
 

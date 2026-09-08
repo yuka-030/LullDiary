@@ -1,5 +1,6 @@
 // apps/desktop/src/lib/recording/useRecordingFlow.ts
 import { useCallback, useState } from 'react'
+import { countInputCharacters, validateTextInput } from './textInput'
 import { MAX_RECORDING_SECONDS, useRecorder } from './useRecorder'
 
 export type InputMode = 'voice' | 'text'
@@ -25,6 +26,8 @@ export function useRecordingFlow({ onBack, onSaved }: Options) {
   const [mode, setMode] = useState<InputMode>('voice')
   // テキスト入力欄の内容
   const [inputText, setInputText] = useState('')
+  // 日本語変換中の状態
+  const [isTextComposing, setIsTextComposing] = useState(false)
   // 確定済みの入力テキスト
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
   // 確定した入力の入力方法
@@ -46,8 +49,14 @@ export function useRecordingFlow({ onBack, onSaved }: Options) {
   const isRecording = status === 'recording'
   const isRecorded = status === 'recorded'
   const isProcessing = status === 'processing'
+
+  // 入力文字数と検証結果
+  const inputCharacterCount = countInputCharacters(inputText)
+  const validationError = validateTextInput(inputText)
+  const textInputError = inputText.length > 0 && !isTextComposing ? validationError : null
+
   // 送信ボタンの有効判定
-  const canSubmitText = inputText.trim().length > 0
+  const canSubmitText = !isTextComposing && validationError === null
 
   // 消えたドットの数
   const spentDots =
@@ -117,6 +126,7 @@ export function useRecordingFlow({ onBack, onSaved }: Options) {
   const finishSave = useCallback(() => {
     setConfirmedText(null)
     setInputText('')
+    setIsTextComposing(false)
     onSaved()
   }, [onSaved])
 
@@ -125,6 +135,9 @@ export function useRecordingFlow({ onBack, onSaved }: Options) {
     mode,
     inputText,
     setInputText,
+    inputCharacterCount,
+    textInputError,
+    setIsTextComposing,
     confirmedText,
     confirmedMode,
     isRecording,
