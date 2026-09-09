@@ -1,5 +1,5 @@
 // apps/server/src/stt/whisper.ts
-import { unlink } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { platform, tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -31,11 +31,15 @@ export class WhisperError extends Error {
 
 // WAV音声の文字起こし
 export async function transcribe(audio: ArrayBuffer): Promise<string> {
-  const tempPath = path.join(tmpdir(), `lulldiary-${Date.now()}.wav`)
+  const tempDirectory = await mkdtemp(path.join(tmpdir(), 'lulldiary-'))
+  const tempPath = path.join(tempDirectory, 'recording.wav')
 
   try {
     // 音声データの一時保存
-    await Bun.write(tempPath, audio)
+    await writeFile(tempPath, new Uint8Array(audio), {
+      flag: 'wx',
+      mode: 0o600,
+    })
 
     const proc = Bun.spawn(
       [
@@ -74,7 +78,7 @@ export async function transcribe(audio: ArrayBuffer): Promise<string> {
 
     return stdout.trim()
   } finally {
-    // 一時ファイルの削除
-    await unlink(tempPath).catch(() => {})
+    // 一時ディレクトリの削除
+    await rm(tempDirectory, { recursive: true, force: true }).catch(() => {})
   }
 }

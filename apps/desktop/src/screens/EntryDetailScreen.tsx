@@ -116,7 +116,7 @@ export default function EntryDetailScreen({
             <input
               ref={photoInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handlePhotoSelect}
               className="hidden"
             />
