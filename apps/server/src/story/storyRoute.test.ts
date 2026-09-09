@@ -3,10 +3,10 @@ import { describe, expect, mock, test } from 'bun:test'
 import { createStoryRoute } from './storyRoute'
 
 describe('物語生成APIの入力検証', () => {
-  test('100字のテキスト入力を生成処理へ渡す', async () => {
+  test('120字のテキスト入力を生成処理へ渡す', async () => {
     const generate = mock(async () => '物語')
     const app = createStoryRoute(generate)
-    const text = 'あ'.repeat(100)
+    const text = 'あ'.repeat(120)
 
     const response = await app.request('/generate-story', {
       method: 'POST',
@@ -19,29 +19,29 @@ describe('物語生成APIの入力検証', () => {
     expect(generate).toHaveBeenCalledWith(text, expect.any(Number))
   })
 
-  test('101字のテキスト入力を400で拒否し生成処理を呼ばない', async () => {
+  test('121字のテキスト入力を400で拒否し生成処理を呼ばない', async () => {
     const generate = mock(async () => '物語')
     const app = createStoryRoute(generate)
 
     const response = await app.request('/generate-story', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: 'あ'.repeat(101), input_type: 'text' }),
+      body: JSON.stringify({ text: 'あ'.repeat(121), input_type: 'text' }),
     })
 
     expect(response.status).toBe(400)
-    expect(await response.json()).toEqual({ error: '100字以内で入力してください' })
+    expect(await response.json()).toEqual({ error: '120字以内で入力してください' })
     expect(generate).not.toHaveBeenCalled()
   })
 
-  test('101字の音声入力を許可する', async () => {
+  test('121字の音声入力を許可する', async () => {
     const generate = mock(async () => '物語')
     const app = createStoryRoute(generate)
 
     const response = await app.request('/generate-story', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: 'あ'.repeat(101), input_type: 'voice' }),
+      body: JSON.stringify({ text: 'あ'.repeat(121), input_type: 'voice' }),
     })
 
     expect(response.status).toBe(200)
