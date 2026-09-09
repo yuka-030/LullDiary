@@ -1,5 +1,6 @@
 // apps/server/src/index.ts
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import {
   createEntry,
@@ -15,8 +16,10 @@ import {
   UpdateEntryFieldsSchema,
 } from './db/entrySchema'
 import { migrate } from './db/migrate'
+import { MAX_AUDIO_BYTES, MAX_UPLOAD_BYTES, MediaValidationError } from './media/limits'
 import { narrationPath, photoPath, removeMedia, removePhotos } from './media/paths'
 import { saveNarration, savePhotos } from './media/save'
+import { prepareMedia, validateWav, type PreparedMedia } from './media/validation'
 import { createStoryRoute } from './story/storyRoute'
 import { transcribe, WhisperError } from './stt/whisper'
 import { extractTags, TagExtractionError } from './tag/ollama'
@@ -29,6 +32,12 @@ const VOICEVOX_URL = process.env.VOICEVOX_URL
 if (!VOICEVOX_URL) {
   throw new Error('VOICEVOX_URL が設定されていません')
 }
+
+// 許可するアプリの送信元
+const ALLOWED_ORIGINS = ['http://localhost:1420', 'tauri://localhost', 'http://tauri.localhost']
+
+// 許可するAPIの接続先名
+const ALLOWED_HOSTS = new Set(['localhost:3000', '127.0.0.1:3000'])
 
 // 暁記ミタマ ノーマル
 const SPEAKER_ID = 122
@@ -100,7 +109,7 @@ const NOISY_VOWEL_LENGTH_SCALE = 0.75
 const NOISY_VOWEL_LENGTH_LIMIT = 0.1
 
 // 写真ファイル名
-const PHOTO_FILENAME_PATTERN = /^photo\d+\.jpg$/
+const PHOTO_FILENAME_PATTERN = /^photo[1-9]\d*\.jpg$/
 
 // データベースの初期化
 migrate()
@@ -108,11 +117,61 @@ migrate()
 // Honoアプリ
 const app = new Hono()
 
+// レスポンスの形式推測の禁止
+app.use('/*', async (c, next) => {
+  await next()
+  c.header('X-Content-Type-Options', 'nosniff')
+})
+
+// APIの接続先名の検証
+app.use('/*', async (c, next) => {
+  const host = c.req.header('Host')?.toLowerCase()
+
+  if (!host || !ALLOWED_HOSTS.has(host)) {
+    return c.json({ error: '許可されていない接続先です' }, 403)
+  }
+
+  await next()
+})
+
 // CORSの設定
 app.use(
   '/*',
   cors({
-    origin: ['http://localhost:1420', 'tauri://localhost'],
+    origin: ALLOWED_ORIGINS,
+  })
+)
+
+// データ送信・変更リクエストの送信元の検証
+app.use('/*', async (c, next) => {
+  const method = c.req.method
+
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const origin = c.req.header('Origin')
+
+    if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+      return c.json({ error: '許可されていない送信元です' }, 403)
+    }
+  }
+
+  await next()
+})
+
+// 受信データの容量制限
+app.use(
+  '/*',
+  bodyLimit({
+    maxSize: MAX_UPLOAD_BYTES,
+    onError: (c) => c.json({ error: '送信データの容量が上限を超えています' }, 413),
+  })
+)
+
+// 文字起こし音声の容量制限
+app.use(
+  '/stt',
+  bodyLimit({
+    maxSize: MAX_AUDIO_BYTES,
+    onError: (c) => c.json({ error: '音声は20MB以内にしてください' }, 413),
   })
 )
 
@@ -335,17 +394,19 @@ app.get('/health', (c) => {
 
 // 音声の文字起こし
 app.post('/stt', async (c) => {
-  const body = await c.req.arrayBuffer()
-
-  if (body.byteLength === 0) {
-    return c.json({ error: '音声データが空です' }, 400)
-  }
-
   try {
+    const body = await c.req.arrayBuffer()
+
+    validateWav(body)
+
     const text = await transcribe(body)
 
     return c.json({ text }, 200)
   } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return c.json({ error: err.message }, 400)
+    }
+
     if (err instanceof WhisperError) {
       return c.json({ error: err.message }, 500)
     }
@@ -459,15 +520,21 @@ app.post('/entries', async (c) => {
     return c.json({ error: '日記の内容が不正です' }, 400)
   }
 
-  // ナレーションファイルの取得
-  const narrationFile = form.narration instanceof File ? form.narration : undefined
+  // 保存前のメディア検証と写真の変換
+  let preparedMedia: PreparedMedia
 
-  // 写真ファイルの取得
-  const photoFiles = Array.isArray(form.photos)
-    ? form.photos.filter((item): item is File => item instanceof File)
-    : form.photos instanceof File
-      ? [form.photos]
-      : []
+  try {
+    preparedMedia = await prepareMedia(form)
+  } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return c.json({ error: err.message }, 400)
+    }
+
+    return c.json({ error: '写真・音声の処理に失敗しました' }, 500)
+  }
+
+  const narrationFile = preparedMedia.narration
+  const photoFiles = preparedMedia.photos
 
   try {
     const entry = createEntry(parsed.data)
@@ -629,15 +696,21 @@ app.patch('/entries/:id', async (c) => {
     return c.json({ error: '日記の内容が不正です' }, 400)
   }
 
-  // ナレーションファイルの取得
-  const narrationFile = form.narration instanceof File ? form.narration : undefined
+  // 保存前のメディア検証と写真の変換
+  let preparedMedia: PreparedMedia
 
-  // 写真ファイルの取得
-  const photoFiles = Array.isArray(form.photos)
-    ? form.photos.filter((item): item is File => item instanceof File)
-    : form.photos instanceof File
-      ? [form.photos]
-      : []
+  try {
+    preparedMedia = await prepareMedia(form)
+  } catch (err) {
+    if (err instanceof MediaValidationError) {
+      return c.json({ error: err.message }, 400)
+    }
+
+    return c.json({ error: '写真・音声の処理に失敗しました' }, 500)
+  }
+
+  const narrationFile = preparedMedia.narration
+  const photoFiles = preparedMedia.photos
 
   // 写真削除指定の取得
   const shouldClearPhotos = form.clear_photos === 'true'
@@ -697,5 +770,6 @@ app.delete('/entries/:id', (c) => {
 export default {
   port: 3000,
   hostname: '127.0.0.1',
+  maxRequestBodySize: MAX_UPLOAD_BYTES,
   fetch: app.fetch,
 }

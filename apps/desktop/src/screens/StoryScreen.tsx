@@ -124,7 +124,7 @@ export default function StoryScreen({ inputText, inputType, onSave }: Props) {
                 <input
                   ref={photoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={handlePhotoSelect}
                   className="hidden"
                 />
