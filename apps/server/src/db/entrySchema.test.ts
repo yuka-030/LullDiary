@@ -5,19 +5,19 @@ import { CreateEntryFieldsSchema, UpdateEntryFieldsSchema } from './entrySchema'
 // 保存用の入力
 const entry = {
   input_type: 'text',
-  raw_input_text: 'あ'.repeat(100),
+  raw_input_text: 'あ'.repeat(120),
   story_text: '物語'.repeat(100),
   tags: { シーン: '自然', 感情: ['穏やか'] },
 }
 
 describe('保存時の入力検証', () => {
-  test('100字のテキスト入力を許可する', () => {
+  test('120字のテキスト入力を許可する', () => {
     expect(CreateEntryFieldsSchema.safeParse(entry).success).toBe(true)
   })
 
-  test('101字のテキスト入力を拒否する', () => {
+  test('121字のテキスト入力を拒否する', () => {
     expect(
-      CreateEntryFieldsSchema.safeParse({ ...entry, raw_input_text: 'あ'.repeat(101) }).success
+      CreateEntryFieldsSchema.safeParse({ ...entry, raw_input_text: 'あ'.repeat(121) }).success
     ).toBe(false)
   })
 
@@ -27,12 +27,12 @@ describe('保存時の入力検証', () => {
     }
   })
 
-  test('音声入力と生成済みの物語文に100字制限を適用しない', () => {
+  test('音声入力と生成済みの物語文に120字制限を適用しない', () => {
     expect(
       CreateEntryFieldsSchema.safeParse({
         ...entry,
         input_type: 'voice',
-        raw_input_text: 'あ'.repeat(101),
+        raw_input_text: 'あ'.repeat(121),
       }).success
     ).toBe(true)
 

@@ -2,6 +2,7 @@
 import { HeartShape, MicIcon, PencilIcon, StopIcon } from '../components/recording/RecordingIcons'
 import TranscriptModal from '../components/recording/TranscriptModal'
 import { TEXT_INPUT_LIMIT } from '../lib/recording/textInput'
+import { useJapaneseInput } from '../lib/recording/useJapaneseInput'
 import { RECORDING_DOT_COUNT, useRecordingFlow } from '../lib/recording/useRecordingFlow'
 import StoryScreen from './StoryScreen'
 
@@ -41,6 +42,9 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
     backToHome,
     finishSave,
   } = useRecordingFlow({ onBack, onSaved })
+
+  // 入力開始時の日本語入力
+  const enableJapaneseInput = useJapaneseInput()
 
   // 声での波紋の広がり
   const rippleScale = 1.1 + level * 0.35
@@ -113,6 +117,7 @@ export default function RecordingScreen({ onBack, onSaved }: Props) {
               aria-describedby={`text-input-guide text-input-count${textInputError ? ' text-input-error' : ''}`}
               aria-invalid={Boolean(textInputError)}
               value={inputText}
+              onFocus={enableJapaneseInput}
               onChange={(e) => setInputText(e.target.value)}
               onCompositionStart={() => setIsTextComposing(true)}
               onCompositionEnd={(e) => {

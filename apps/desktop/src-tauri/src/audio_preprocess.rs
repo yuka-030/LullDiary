@@ -82,7 +82,11 @@ pub fn find_voiced_range(samples: &[f32], threshold: f32) -> Option<(usize, usiz
 }
 
 /// 発話区間の範囲
-pub fn find_speech_range(samples: &[f32], frame_size: usize, threshold: f32) -> Option<(usize, usize)> {
+pub fn find_speech_range(
+    samples: &[f32],
+    frame_size: usize,
+    threshold: f32,
+) -> Option<(usize, usize)> {
     let mut start: usize = 0;
     let mut length: usize = 0;
 
@@ -110,9 +114,8 @@ pub fn find_speech_range(samples: &[f32], frame_size: usize, threshold: f32) -> 
 
 /// 音量の正規化
 pub fn apply_volume_normalize(samples: &mut [f32], target_rms: f32, max_gain: f32) -> bool {
-    let applied = unsafe {
-        normalize_volume(samples.as_mut_ptr(), samples.len(), target_rms, max_gain)
-    };
+    let applied =
+        unsafe { normalize_volume(samples.as_mut_ptr(), samples.len(), target_rms, max_gain) };
 
     applied == 1
 }
@@ -150,7 +153,12 @@ mod tests {
     use super::*;
 
     /// 前後が無音、中央が有音のサンプル列
-    fn build_samples(total: usize, voiced_start: usize, voiced_end: usize, amplitude: f32) -> Vec<f32> {
+    fn build_samples(
+        total: usize,
+        voiced_start: usize,
+        voiced_end: usize,
+        amplitude: f32,
+    ) -> Vec<f32> {
         (0..total)
             .map(|i| {
                 if (voiced_start..voiced_end).contains(&i) {
