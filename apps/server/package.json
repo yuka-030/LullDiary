@@ -9,8 +9,8 @@
     "setup:voicevox": "bun run scripts/setup-voicevox.ts"
   },
   "dependencies": {
-    "hono": "^4.13.3",
-    "sharp": "^0.35.3",
+    "hono": "4.13.5",
+    "sharp": "0.35.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
