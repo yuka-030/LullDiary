@@ -18,10 +18,12 @@ Must do
 Keep
 - Every 「、」 and 「。」 that is already in the story
 - The day word used in the story
-- The length of the story
+- The narrative flow and descriptions supported by the original diary
+- About 1.4 times the original diary's length as a flexible guide, even after removing unsupported details
 
 Never do
-- Delete or add any sentence
+- Delete original content or supported descriptions to turn the story into a summary
+- Add unsupported facts or feelings when adjusting the length
 - Remove 「、」 or 「。」
 """
 
