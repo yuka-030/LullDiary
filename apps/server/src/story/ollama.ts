@@ -15,6 +15,13 @@ export class OllamaError extends Error {
 // モデルをメモリに保持する時間
 const OLLAMA_KEEP_ALIVE = '30m'
 
+// 元の文章から計算する、生成・整形後の長さの目安
+function buildLengthGuide(input: string): string {
+  const target = Math.round(Array.from(input.trim()).length * 1.4)
+
+  return `Aim for about ${target} characters in the finished story (approximately 1.4 times the original diary). This is a flexible guide; do not force the length with repetition or unsupported details.`
+}
+
 // 物語生成のプロンプト
 function buildStoryPrompt(input: string): string {
   return `次の文章を、読み聞かせのような語り口に書き直してください。
@@ -25,27 +32,29 @@ function buildStoryPrompt(input: string): string {
 今日は友達と公園に行った。ブランコで遊んだけど、途中で転んで膝をすりむいた。痛かったけど楽しかった。
 
 書き直した文章:
-今日は、お友だちと公園へ出かけた日でした。ブランコに座って、二人で並んで揺れます。ふとした拍子に、転んでしまいました。膝をすりむいて、じんじんと痛みます。それでも、楽しい一日でした。
+今日は、お友だちと公園へ出かけた日でした。ブランコに座って、二人で並んで揺れます。ふとした拍子に、転んでしまいました。膝をすりむいて、じんじんと痛みます。それでも、友達と遊んだ時間を振り返ると、楽しい一日でした。
 
 元の文章:
 今日は一日中、部屋の片づけをした。思ったより物が多くて、途中で嫌になった。またそのうちやろうと思う。
 
 書き直した文章:
-今日は、部屋の片づけをした一日でした。あちこちに散らばったものを、一つずつ手に取っては片付けていきます。思っていたよりも、ずっとたくさんありました。途中で、嫌になってしまいました。またそのうちやろうと思いました。
+今日は、部屋の片づけをした一日でした。あちこちに散らばったものを、一つずつ手に取っては片付けていきます。思っていたよりも、ずっとたくさんありました。途中で、嫌になってしまい、またそのうちやろうと思いました。
 
 元の文章:
 朝から歯医者に行きました。麻酔が効くまで待つ時間が長くて、そわそわしました。終わったあとは口の中が変な感じでした。
 
 書き直した文章:
-今日は、朝から歯医者へ行きました。診察台に座って麻酔をしてもらうと、効いてくるまでの時間は長くて、そわそわと落ち着かない気持ちになりました。ようやく治療が終わったあとは、口の中が変な感じが残っていました。
+今日は、朝から歯医者へ行きました。診察台に座って麻酔をしてもらうと、効いてくるまでの時間は長くて、そわそわと落ち着かない気持ちになりました。ようやく治療が終わったあとは、口の中には、変な感じが残っていました。
 
 元の文章:
 夕方にスーパーへ寄りました。買うつもりのなかったアイスをかごに入れてしまいました。帰ってすぐに食べました。
 
 書き直した文章:
-夕方になり、近くのスーパーへ足を運びました。並んだ商品を眺めながら歩いていると、ふと目に留まったアイスを、つい買うつもりもなくかごに入れてしまいました。家に帰ると、袋から取り出して、すぐにそのアイスを食べました。
+夕方になり、近くのスーパーへ足を運びました。並んだ商品を眺めながら歩いていると、ふと目に留まったアイスを、買うつもりはなかったのに、つい、かごに入れてしまいました。家に帰ると、袋から取り出して、すぐにそのアイスを食べました。
 
 同じように書き直してください。元の文章の最初から最後まで、すべての内容を含めてください。改行は入れず、適宜「、」と「。」を入れて、続けて書いてください。書き直した文章だけを出力してください。
+
+${buildLengthGuide(input)}
 
 元の文章:
 ${input}
@@ -57,6 +66,8 @@ ${input}
 // 添削のプロンプト
 function buildPolishPrompt(input: string, story: string): string {
   return `書き直された文章を、元の文章と見比べて、ルールに沿って直してください。直した文章だけを出力してください。
+
+${buildLengthGuide(input)}
 
 元の文章:
 ${input}
@@ -91,6 +102,14 @@ async function generate(model: string, prompt: string, seed: number): Promise<st
   })
 
   if (!response.ok) {
+    const detail = await response.text().catch(() => 'エラー本文を取得できませんでした')
+
+    console.error('[Ollamaエラー]', {
+      model,
+      status: response.status,
+      detail,
+    })
+
     throw new OllamaError(`Ollamaの応答が不正です(${response.status})`)
   }
 
