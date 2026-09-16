@@ -13,7 +13,6 @@
 ## デモ
 
 ![デモ動画](docs/demo/LullDiary_デモ動画.gif)
-[デモ動画](docs/demo/LullDiary_デモ動画.mp4)
 
 ## 実装済みの機能
 
